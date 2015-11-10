@@ -52,6 +52,14 @@ def createPerformanceTearSheet(prices=None, returns=None, benchmark=None, benchm
         benchmarkReturns.name = benchmark
         benchmarkReturns.dropna(inplace=True)
         benchmarkReturns.index = pd.to_datetime(benchmarkReturns.index.date)
+    elif benchmark is not None and isinstance(benchmark, pd.Series):
+        benchmarkReturns = np.log(benchmark / benchmark.shift(1))
+        try:
+            benchmarkReturns.name = benchmark.name
+        except AttributeError:
+            benchmarkReturns.name = "benchmark"
+        benchmarkReturns.dropna(inplace=True)
+        benchmarkReturns.index = pd.to_datetime(benchmarkReturns.index.date)
 
     aggregateDaily = aggregateReturns(returns)
     drawDownDaily = drawDown(aggregateDaily)
@@ -173,3 +181,10 @@ def createAllTearSheet(positions, prices=None, returns=None, benchmark=None, plo
     createPostionTearSheet(position=positions, plot=plot)
     return perf_metric, perf_df
 
+if __name__ == "__main__":
+    from pandas_datareader import data
+    import matplotlib.pyplot as plt
+    prices = data.get_data_yahoo('600000.ss')
+    benchmark = data.get_data_yahoo('000300.ss')
+    perf_matric, perf_df = createPerformanceTearSheet(prices=prices['Close'], benchmark=benchmark['Close'])
+    plt.show()
