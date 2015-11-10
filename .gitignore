@@ -2,4 +2,4 @@
 notebooks/.ipynb_checkpoints/*
 .idea/*
 build/*
-
+*.pyc
