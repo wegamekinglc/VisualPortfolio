@@ -3,3 +3,5 @@ notebooks/.ipynb_checkpoints/*
 .idea/*
 build/*
 *.pyc
+*.csv
+*.log

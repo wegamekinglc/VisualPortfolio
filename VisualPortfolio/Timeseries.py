@@ -26,8 +26,22 @@ def aggregatePositons(positionBooks, convert='daily'):
         resampled_pos = positionBooks.groupby(
             lambda x: dt.datetime(x.year, x.month, x.day)).last()
 
-    return resampled_pos.divide(
-        resampled_pos.abs().sum(axis='columns'),
+    return resampled_pos
+
+
+def aggregateTranscations(transcations, convert='daily'):
+    transcations = transcations[['turnover_volume', 'turnover_value']].abs()
+    if convert == 'daily':
+        resampled_pos = transcations.groupby(
+            lambda x: dt.datetime(x.year, x.month, x.day)).sum()
+
+    return resampled_pos
+
+
+def calculatePosWeight(pos):
+
+    return pos.divide(
+        pos.abs().sum(axis='columns'),
         axis='rows'
     )
 

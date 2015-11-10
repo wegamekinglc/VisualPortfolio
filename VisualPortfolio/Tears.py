@@ -7,8 +7,8 @@ Created on 2015-11-9
 
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
+import matplotlib.pyplot as plt
 from VisualPortfolio.Timeseries import aggregateReturns
 from VisualPortfolio.Timeseries import drawDown
 from VisualPortfolio.Plottings import plottingRollingReturn
@@ -23,8 +23,12 @@ from VisualPortfolio.Timeseries import annualVolatility
 from VisualPortfolio.Timeseries import sortinoRatio
 from VisualPortfolio.Timeseries import sharpRatio
 from VisualPortfolio.Timeseries import aggregatePositons
+from VisualPortfolio.Timeseries import calculatePosWeight
+from VisualPortfolio.Timeseries import aggregateTranscations
 from VisualPortfolio.Plottings import plottingExposure
-from VisualPortfolio.Plottings import plottingTop5Exposure
+from VisualPortfolio.Plottings import plottingTopExposure
+from VisualPortfolio.Plottings import plottingHodings
+from VisualPortfolio.Plottings import plottingTurnover
 from DataAPI import api
 from PyFin.API import advanceDateByCalendar
 from PyFin.Enums import BizDayConventions
@@ -162,28 +166,50 @@ def createPerformanceTearSheet(prices=None, returns=None, benchmark=None, benchm
 
 @plotting_context
 def createPostionTearSheet(position, plot=True):
-        positions = aggregatePositons(position)
+    positions = aggregatePositons(position)
+    positions_weiget = calculatePosWeight(positions)
+    if plot:
+        verticalSections = 3
+        plt.figure(figsize=(16, 7 * verticalSections))
+        gs = gridspec.GridSpec(verticalSections, 3, wspace=0.5, hspace=0.5)
 
-        if plot:
-            verticalSections = 2
-            plt.figure(figsize=(16, 7 * verticalSections))
-            gs = gridspec.GridSpec(verticalSections, 3, wspace=0.5, hspace=0.5)
+        axExposure = plt.subplot(gs[0, :])
+        axTopExposure = plt.subplot(gs[1, :], sharex=axExposure)
+        axHoldings = plt.subplot(gs[2, :])
 
-            axExposure = plt.subplot(gs[0, :])
-            axTpo5Exposure = plt.subplot(gs[1, :], sharex=axExposure)
+        plottingExposure(positions_weiget, axExposure)
+        plottingTopExposure(positions_weiget, axTopExposure)
+        plottingHodings(positions_weiget, axHoldings)
+    return positions
 
-            plottingExposure(positions, axExposure)
-            plottingTop5Exposure(positions, axTpo5Exposure)
 
 @plotting_context
-def createAllTearSheet(positions, prices=None, returns=None, benchmark=None, plot=True):
+def createTranscationTearSheet(transactions, positions, plot=True):
+    positions = aggregatePositons(positions)
+    transcations = aggregateTranscations(transactions)
+    if plot:
+        verticalSections = 1
+        plt.figure(figsize=(16, 7 * verticalSections))
+        gs = gridspec.GridSpec(verticalSections, 3, wspace=0.5, hspace=0.5)
+
+        axTurnOver = plt.subplot(gs[0, :])
+
+        turnOverRate = plottingTurnover(transcations, positions, axTurnOver)[1]
+        turnOverRate.name = 'turnover_rate'
+        turnOverRate.index.name = 'date'
+
+    return pd.DataFrame(turnOverRate)
+
+
+@plotting_context
+def createAllTearSheet(positions, transcations, prices=None, returns=None, benchmark=None, plot=True):
     perf_metric, perf_df = createPerformanceTearSheet(prices=prices, returns=returns, benchmark=benchmark, plot=plot)
     createPostionTearSheet(position=positions, plot=plot)
+    createTranscationTearSheet(position=positions, transcations=transcations, plot=plot)
     return perf_metric, perf_df
 
 if __name__ == "__main__":
     from pandas_datareader import data
-    import matplotlib.pyplot as plt
     prices = data.get_data_yahoo('600000.ss')
     benchmark = data.get_data_yahoo('000300.ss')
     perf_matric, perf_df = createPerformanceTearSheet(prices=prices['Close'], benchmark=benchmark['Close'])

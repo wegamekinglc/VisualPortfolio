@@ -10,7 +10,9 @@ import seaborn as sns
 import matplotlib
 from matplotlib.ticker import FuncFormatter
 import pandas as pd
+import numpy as np
 from VisualPortfolio.Timeseries import aggregateReturns
+from Transactions import getTurnOver
 
 
 def plotting_context(func):
@@ -193,9 +195,10 @@ def plottingExposure(positions, ax, title="Total non cash exposure (%)"):
     total_security_position = positions_without_cash.sum(axis=1) * 100.
     total_security_position.plot(kind='area', color='lightblue', alpha=1.0, ax=ax)
     ax.set_title(title)
+    return ax
 
 
-def plottingTop5Exposure(positions, ax, top=10, title="Top 10 securities exposure (%)"):
+def plottingTopExposure(positions, ax, top=10, title="Top 10 securities exposure (%)"):
     y_axis_formatter = FuncFormatter(two_dec_places)
     ax.yaxis.set_major_formatter(FuncFormatter(y_axis_formatter))
     positions_without_cash = positions.drop('cash', axis='columns')
@@ -206,3 +209,54 @@ def plottingTop5Exposure(positions, ax, top=10, title="Top 10 securities exposur
     ax.set_title(title)
     return ax
 
+
+def plottingHodings(positions, ax, title="Holdings per Day"):
+    positions = positions.drop('cash', axis='columns')
+    df_holdings = positions.apply(lambda x: np.sum(x != 0), axis='columns')
+    df_holdings_by_month = df_holdings.resample('1M', how='mean')
+    df_holdings.plot(color='steelblue', alpha=0.6, lw=0.5, ax=ax)
+    df_holdings_by_month.plot(
+        color='orangered',
+        alpha=0.5,
+        lw=2,
+        ax=ax)
+    ax.axhline(
+        df_holdings.values.mean(),
+        color='steelblue',
+        ls='--',
+        lw=3,
+        alpha=1.0)
+
+    ax.set_xlim((positions.index[0], positions.index[-1]))
+
+    ax.legend(['Daily holdings',
+               'average month daily holdings',
+               'average whold peirod daily holdings'],
+              loc="best")
+    ax.set_title(title)
+    ax.set_ylabel('Number of securities holdings')
+    ax.set_xlabel('')
+    return ax
+
+
+def plottingTurnover(transactions, positions, ax, title="Daily Turnover"):
+    y_axis_formatter = FuncFormatter(two_dec_places)
+    ax.yaxis.set_major_formatter(FuncFormatter(y_axis_formatter))
+
+    df_turnover = getTurnOver(transactions, positions)
+    df_turnover_by_month = df_turnover.resample('M')
+    df_turnover.plot(color='steelblue', alpha=1.0, lw=0.5, ax=ax)
+    df_turnover_by_month.plot(
+        color='orangered',
+        alpha=0.5,
+        lw=2,
+        ax=ax)
+    ax.axhline(
+        df_turnover.mean(), color='steelblue', linestyle='--', lw=3, alpha=1.0)
+    ax.legend(['Daily turnover',
+               'Average month daily turnover',
+               'Average whole period daily turnover'],
+              loc="best")
+    ax.set_title(title)
+    ax.set_ylabel('Turnover')
+    return ax, df_turnover

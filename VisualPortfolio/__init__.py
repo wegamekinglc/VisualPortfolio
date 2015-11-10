@@ -7,4 +7,5 @@ Created on 2015-11-9
 
 from VisualPortfolio.Tears import createPerformanceTearSheet
 from VisualPortfolio.Tears import createPostionTearSheet
+from VisualPortfolio.Tears import createTranscationTearSheet
 from VisualPortfolio.Tears import createAllTearSheet
