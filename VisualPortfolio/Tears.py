@@ -147,7 +147,7 @@ def createPerformanceTearSheet(prices=None, returns=None, benchmark=None, benchm
                                                                                         + benchmarkReturns.name)
          plottingMonthlyReturnsHeapmap(accessReturns, ax=axAccessMonthlyHeatmap, title='Monthly Access Returns (%)')
          plottingAnnualReturns(accessReturns, ax=axAccessAnnualReturns, title='Annual Access Returns')
-         plottingMonthlyRetDist(accessReturns, ax=axAccessMonthlyDist, title='"Distribution of Monthly Access Returns')
+         plottingMonthlyRetDist(accessReturns, ax=axAccessMonthlyDist, title='Distribution of Monthly Access Returns')
 
     return perf_metric, perf_df
 
@@ -166,3 +166,10 @@ def createPostionTearSheet(position, plot=True):
 
             plottingExposure(positions, axExposure)
             plottingTop5Exposure(positions, axTpo5Exposure)
+
+@plotting_context
+def createAllTearSheet(positions, prices=None, returns=None, benchmark=None, plot=True):
+    perf_metric, perf_df = createPerformanceTearSheet(prices=prices, returns=returns, benchmark=benchmark, plot=plot)
+    createPostionTearSheet(position=positions, plot=plot)
+    return perf_metric, perf_df
+
