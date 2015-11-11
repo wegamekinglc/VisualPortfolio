@@ -3,14 +3,18 @@
 
 将策略或者资产包的表现可视化。大量参考以及模仿自[pyfolio](https://github.com/quantopian/pyfolio)，包括图的配置以及代码。
 
+This tool is used to visualize the perfomance of a portfolio. Much of the codes and samples come from the original referenced project:[pyfolio](https://github.com/quantopian/pyfolio)
+
 ## 依赖
 ----------------------
 
 ~~~
+lxml
 matplotlib
 numpy
 pandas
 seaborn
+tushare
 ~~~
 
 ## 安装

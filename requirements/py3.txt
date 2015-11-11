@@ -1,0 +1,5 @@
+Finance-Python>=0.3.11
+lxml>=3.4.4
+matplotlib>=1.4.3
+seaborn>=0.6.0
+tushare>=0.3.9
