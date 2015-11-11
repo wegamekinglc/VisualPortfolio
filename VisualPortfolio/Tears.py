@@ -5,6 +5,7 @@ Created on 2015-11-9
 @author: cheng.li
 """
 
+import os
 import numpy as np
 import pandas as pd
 import matplotlib.gridspec as gridspec
@@ -13,6 +14,8 @@ from VisualPortfolio.Timeseries import aggregateReturns
 from VisualPortfolio.Timeseries import drawDown
 from VisualPortfolio.Plottings import plottingRollingReturn
 from VisualPortfolio.Plottings import plottingDrawdownPeriods
+from VisualPortfolio.Plottings import plottingRollingBeta
+from VisualPortfolio.Plottings import plottingRollingSharp
 from VisualPortfolio.Plottings import plottingUnderwater
 from VisualPortfolio.Plottings import plottingMonthlyReturnsHeapmap
 from VisualPortfolio.Plottings import plottingAnnualReturns
@@ -29,7 +32,8 @@ from VisualPortfolio.Plottings import plottingExposure
 from VisualPortfolio.Plottings import plottingTopExposure
 from VisualPortfolio.Plottings import plottingHodings
 from VisualPortfolio.Plottings import plottingTurnover
-from DataAPI import api
+from VisualPortfolio.Timeseries import APPROX_BDAYS_PER_MONTH
+import tushare as ts
 from PyFin.API import advanceDateByCalendar
 from PyFin.Enums import BizDayConventions
 
@@ -48,11 +52,24 @@ def createPerformanceTearSheet(prices=None, returns=None, benchmark=None, benchm
     if returns is None:
         returns = np.log(prices / prices.shift(1))
         returns.dropna(inplace=True)
+        returns = returns[~np.isinf(returns)]
 
     if benchmark is not None and isinstance(benchmark, str) and benchmarkReturns is None:
         startDate = advanceDateByCalendar("China.SSE", returns.index[0], '-1b', BizDayConventions.Preceding)
-        benchmarkPrices = api.GetIndexBarEOD(benchmark[:6], startDate.strftime('%Y-%m-%d'), endDate=returns.index[-1].strftime("%Y-%m-%d"))
-        benchmarkReturns = np.log(benchmarkPrices['closePrice'] / benchmarkPrices['closePrice'].shift(1))
+        try:
+            token = os.environ['DATAYES_TOKEN']
+            ts.set_token(token)
+        except KeyError:
+            raise ValueError("Please input token or set up DATAYES_TOKEN in the envirement.")
+
+        benchmarkPrices = ts.Market().MktIdxd(indexID=benchmark,
+                                              beginDate=startDate.strftime('%Y%m%d'),
+                                              endDate=returns.index[-1].strftime("%Y%m%d"),
+                                              field='tradeDate,closeIndex')
+        benchmarkPrices['tradeDate'] = pd.to_datetime(benchmarkPrices['tradeDate'], format="%Y-%m-%d")
+        benchmarkPrices.set_index('tradeDate', inplace=True)
+        benchmarkPrices.columns = ['close']
+        benchmarkReturns = np.log(benchmarkPrices['close'] / benchmarkPrices['close'].shift(1))
         benchmarkReturns.name = benchmark
         benchmarkReturns.dropna(inplace=True)
         benchmarkReturns.index = pd.to_datetime(benchmarkReturns.index.date)
@@ -93,6 +110,7 @@ def createPerformanceTearSheet(prices=None, returns=None, benchmark=None, benchm
     perf_df['daily_draw_down'] = drawDownDaily['draw_down']
 
     if benchmarkReturns is not None:
+        perf_df['benchmark_return'] = benchmarkReturns
         perf_df['benchmark_cum_return'] = benchmarkReturns.cumsum()
         perf_df.dropna(inplace=True)
         perf_df['benchmark_cum_return'] = np.exp(perf_df['benchmark_cum_return']
@@ -129,6 +147,20 @@ def createPerformanceTearSheet(prices=None, returns=None, benchmark=None, benchm
         plt.figure(figsize=(16, 7 * verticalSections))
         gs = gridspec.GridSpec(verticalSections, 3, wspace=0.5, hspace=0.5)
 
+        if len(perf_df['daily_return']) > APPROX_BDAYS_PER_MONTH:
+            axRollingBeta = plt.subplot(gs[0, :])
+            axRollingSharp = plt.subplot(gs[1, :])
+
+            benchmarkDailyReturns = perf_df['benchmark_return']
+            benchmarkDailyReturns.name = benchmarkReturns.name
+            _, rollingBeta = plottingRollingBeta(perf_df['daily_return'], benchmarkDailyReturns, ax=axRollingBeta)
+            _, rollingSharp = plottingRollingSharp(perf_df['daily_return'], ax=axRollingSharp)
+
+            rollingRisk = pd.concat([rollingBeta, rollingSharp], axis=1)
+
+        plt.figure(figsize=(16, 7 * verticalSections))
+        gs = gridspec.GridSpec(verticalSections, 3, wspace=0.5, hspace=0.5)
+
         axUnderwater = plt.subplot(gs[0, :])
         axMonthlyHeatmap = plt.subplot(gs[1, 0])
         axAnnualReturns = plt.subplot(gs[1, 1])
@@ -161,7 +193,7 @@ def createPerformanceTearSheet(prices=None, returns=None, benchmark=None, benchm
          plottingAnnualReturns(accessReturns, ax=axAccessAnnualReturns, title='Annual Access Returns')
          plottingMonthlyRetDist(accessReturns, ax=axAccessMonthlyDist, title='Distribution of Monthly Access Returns')
 
-    return perf_metric, perf_df
+    return perf_metric, perf_df, rollingRisk
 
 
 @plotting_context
@@ -209,8 +241,10 @@ def createAllTearSheet(positions, transcations, prices=None, returns=None, bench
     return perf_metric, perf_df
 
 if __name__ == "__main__":
-    from pandas_datareader import data
-    prices = data.get_data_yahoo('600000.ss')
-    benchmark = data.get_data_yahoo('000300.ss')
-    perf_matric, perf_df = createPerformanceTearSheet(prices=prices['Close'], benchmark=benchmark['Close'])
+    #from pandas_datareader import data
+    #prices = data.get_data_yahoo('600000.ss')
+    #benchmark = data.get_data_yahoo('000300.ss')
+    from DataAPI import api
+    sample_prices = api.GetEquityBarMin1('600000', '2012-10-01', '2015-11-09')
+    perf_matric, perf_df, rolllingRisk = createPerformanceTearSheet(prices=sample_prices['closePrice'], benchmark='000300.zicn')
     plt.show()

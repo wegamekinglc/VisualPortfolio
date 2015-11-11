@@ -12,6 +12,8 @@ from matplotlib.ticker import FuncFormatter
 import pandas as pd
 import numpy as np
 from VisualPortfolio.Timeseries import aggregateReturns
+from VisualPortfolio.Timeseries import RollingBeta
+from VisualPortfolio.Timeseries import RollingSharp
 from Transactions import getTurnOver
 
 
@@ -74,6 +76,52 @@ def plottingRollingReturn(cumReturns, benchmarkReturns, ax, title='Strategy Cumu
     ax.set_title(title)
     ax.legend(loc='best')
     return ax
+
+
+def plottingRollingBeta(returns, benchmarkReturns, ax):
+    y_axis_formatter = FuncFormatter(two_dec_places)
+    ax.yaxis.set_major_formatter(FuncFormatter(y_axis_formatter))
+
+    ax.set_title("Rolling Portfolio Beta to " + benchmarkReturns.name)
+    ax.set_ylabel('Beta')
+
+    rb = RollingBeta(returns, benchmarkReturns, [1, 3, 6])
+    rb['beta_1m'].plot(color='steelblue', lw=3, alpha=0.6, ax=ax)
+    rb['beta_3m'].plot(color='grey', lw=3, alpha=0.4, ax=ax)
+    rb['beta_6m'].plot(color='yellow', lw=3, alpha=0.5, ax=ax)
+    ax.axhline(rb['beta_1m'].mean(), color='steelblue', linestyle='--', lw=3)
+    ax.axhline(0.0, color='black', linestyle='-', lw=2)
+    ax.set_xlabel('')
+    ax.legend(['1-m',
+               '3-m',
+               '6-m',
+               'average 1-m'],
+              loc='best')
+
+    return ax, pd.concat(rb, axis=1)
+
+
+def plottingRollingSharp(returns, ax):
+    y_axis_formatter = FuncFormatter(two_dec_places)
+    ax.yaxis.set_major_formatter(FuncFormatter(y_axis_formatter))
+
+    ax.set_title('Rolling Sharpe ratio')
+    ax.set_ylabel('Sharp')
+
+
+    rs = RollingSharp(returns, [1, 3, 6])
+    rs['sharp_1m'].plot(color='steelblue', lw=3, alpha=0.6, ax=ax)
+    rs['sharp_3m'].plot(color='grey', lw=3, alpha=0.4, ax=ax)
+    rs['sharp_6m'].plot(color='yellow', lw=3, alpha=0.5, ax=ax)
+    ax.axhline(rs['sharp_1m'].mean(), color='steelblue', linestyle='--', lw=3)
+    ax.axhline(0.0, color='black', linestyle='-', lw=2)
+    ax.set_xlabel('')
+    ax.legend(['1-m',
+               '3-m',
+               '6-m',
+               'average 1-m'],
+              loc='best')
+    return ax, pd.concat(rs, axis=1)
 
 
 def plottingDrawdownPeriods(cumReturns, drawDownTable, top, ax, title='Top 5 Drawdown Periods'):

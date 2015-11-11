@@ -5,19 +5,17 @@ Created on 2015-11-9
 @author: cheng.li
 """
 
+import numpy as np
 import pandas as pd
 import datetime as dt
 from math import sqrt
 from math import exp
 from PyFin.Math.Accumulators import MovingDrawDown
+from PyFin.Math.Accumulators import MovingAlphaBeta
+from PyFin.Math.Accumulators import MovingSharp
 
+APPROX_BDAYS_PER_MONTH = 21
 APPROX_BDAYS_PER_YEAR = 252.
-
-
-def cumReturn(returns):
-
-    dfCum = returns.cumsum()
-    return dfCum
 
 
 def aggregatePositons(positionBooks, convert='daily'):
@@ -49,7 +47,7 @@ def calculatePosWeight(pos):
 def aggregateReturns(returns, convert='daily'):
 
     def cumulateReturns(x):
-        return cumReturn(x)[-1]
+       return x.sum()
 
     if convert == 'daily':
         return returns.groupby(
@@ -111,3 +109,40 @@ def sharpRatio(returns):
     annualVol = annualVolatility(returns)
     return annualRet / annualVol
 
+
+def RollingBeta(returns, benchmarkReturns, month_windows):
+
+    def calculateSingalWindowBete(returns, benchmarkReturns, window):
+        res = []
+        rbcalc = MovingAlphaBeta(window=window * APPROX_BDAYS_PER_MONTH)
+        for pRet, mRet in zip(returns, benchmarkReturns):
+            rbcalc.push({'pRet': pRet, 'mRet': mRet, 'riskFree': 0})
+            try:
+                res.append(rbcalc.result()[1])
+            except ZeroDivisionError:
+                res.append(np.nan)
+        return res
+
+    rtn = [pd.Series(calculateSingalWindowBete(returns, benchmarkReturns, window), index=returns.index)
+           for window in month_windows]
+
+    return {"beta_{0}m".format(window): res[APPROX_BDAYS_PER_MONTH*min(month_windows):] for window, res in zip(month_windows, rtn)}
+
+
+def RollingSharp(returns, month_windows):
+
+    def calculateSingalWindowSharp(returns, window):
+        res = []
+        rscalc = MovingSharp(window=window * APPROX_BDAYS_PER_MONTH)
+        for ret in returns:
+            rscalc.push({'ret': ret, 'riskFree': 0})
+            try:
+                res.append(rscalc.result())
+            except ZeroDivisionError:
+                res.append(np.nan)
+        return res
+
+    rtn = [pd.Series(calculateSingalWindowSharp(returns, window), index=returns.index)
+           for window in month_windows]
+
+    return {"sharp_{0}m".format(window): res[APPROX_BDAYS_PER_MONTH*min(month_windows):] for window, res in zip(month_windows, rtn)}
