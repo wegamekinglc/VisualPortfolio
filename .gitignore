@@ -1,6 +1,7 @@
 .ipynb_checkpoints/*
 notebooks/.ipynb_checkpoints/*
 .idea/*
+dist/*
 build/*
 *.pyc
 *.csv

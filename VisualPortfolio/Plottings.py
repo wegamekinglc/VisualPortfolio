@@ -287,24 +287,26 @@ def plottingHodings(positions, ax, title="Holdings per Day"):
     return ax
 
 
-def plottingTurnover(transactions, positions, ax, title="Daily Turnover"):
-    y_axis_formatter = FuncFormatter(two_dec_places)
-    ax.yaxis.set_major_formatter(FuncFormatter(y_axis_formatter))
+def plottingTurnover(transactions, positions, ax=None, title="Daily Turnover"):
 
     df_turnover = getTurnOver(transactions, positions)
     df_turnover_by_month = df_turnover.resample('M')
-    df_turnover.plot(color='steelblue', alpha=1.0, lw=0.5, ax=ax)
-    df_turnover_by_month.plot(
-        color='orangered',
-        alpha=0.5,
-        lw=2,
-        ax=ax)
-    ax.axhline(
-        df_turnover.mean(), color='steelblue', linestyle='--', lw=3, alpha=1.0)
-    ax.legend(['Daily turnover',
-               'Average month daily turnover',
-               'Average whole period daily turnover'],
-              loc="best")
-    ax.set_title(title)
-    ax.set_ylabel('Turnover')
+
+    if ax:
+        y_axis_formatter = FuncFormatter(two_dec_places)
+        ax.yaxis.set_major_formatter(FuncFormatter(y_axis_formatter))
+        df_turnover.plot(color='steelblue', alpha=1.0, lw=0.5, ax=ax)
+        df_turnover_by_month.plot(
+            color='orangered',
+            alpha=0.5,
+            lw=2,
+            ax=ax)
+        ax.axhline(
+            df_turnover.mean(), color='steelblue', linestyle='--', lw=3, alpha=1.0)
+        ax.legend(['Daily turnover',
+                   'Average month daily turnover',
+                   'Average whole period daily turnover'],
+                  loc="best")
+        ax.set_title(title)
+        ax.set_ylabel('Turnover')
     return ax, df_turnover

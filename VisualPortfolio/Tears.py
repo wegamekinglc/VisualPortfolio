@@ -144,10 +144,9 @@ def createPerformanceTearSheet(prices=None, returns=None, benchmark=None, benchm
         plottingRollingReturn(perf_df['daily_cum_return'], benchmarkCumReturns, axRollingReturns)
         plottingDrawdownPeriods(perf_df['daily_cum_return'], drawDownDaily, 5, axDrawDown)
 
-        plt.figure(figsize=(16, 7 * verticalSections))
-        gs = gridspec.GridSpec(verticalSections, 3, wspace=0.5, hspace=0.5)
-
-        if len(perf_df['daily_return']) > APPROX_BDAYS_PER_MONTH:
+        if len(perf_df['daily_return']) > APPROX_BDAYS_PER_MONTH and benchmarkCumReturns is not None:
+            plt.figure(figsize=(16, 7 * verticalSections))
+            gs = gridspec.GridSpec(verticalSections, 3, wspace=0.5, hspace=0.5)
             axRollingBeta = plt.subplot(gs[0, :])
             axRollingSharp = plt.subplot(gs[1, :])
 
@@ -157,6 +156,8 @@ def createPerformanceTearSheet(prices=None, returns=None, benchmark=None, benchm
             _, rollingSharp = plottingRollingSharp(perf_df['daily_return'], ax=axRollingSharp)
 
             rollingRisk = pd.concat([rollingBeta, rollingSharp], axis=1)
+        else:
+            rollingRisk = None
 
         plt.figure(figsize=(16, 7 * verticalSections))
         gs = gridspec.GridSpec(verticalSections, 3, wspace=0.5, hspace=0.5)
@@ -170,6 +171,8 @@ def createPerformanceTearSheet(prices=None, returns=None, benchmark=None, benchm
         plottingMonthlyReturnsHeapmap(returns, axMonthlyHeatmap)
         plottingAnnualReturns(returns, axAnnualReturns)
         plottingMonthlyRetDist(returns, axMonthlyDist)
+    else:
+        rollingRisk = None
 
     if accessReturns is not None and plot:
          plt.figure(figsize=(16, 7 * verticalSections))
@@ -219,16 +222,18 @@ def createPostionTearSheet(position, plot=True):
 def createTranscationTearSheet(transactions, positions, plot=True):
     positions = aggregatePositons(positions)
     transcations = aggregateTranscations(transactions)
+
     if plot:
         verticalSections = 1
         plt.figure(figsize=(16, 7 * verticalSections))
         gs = gridspec.GridSpec(verticalSections, 3, wspace=0.5, hspace=0.5)
-
         axTurnOver = plt.subplot(gs[0, :])
+    else:
+        axTurnOver = None
 
-        turnOverRate = plottingTurnover(transcations, positions, axTurnOver)[1]
-        turnOverRate.name = 'turnover_rate'
-        turnOverRate.index.name = 'date'
+    turnOverRate = plottingTurnover(transcations, positions, axTurnOver)[1]
+    turnOverRate.name = 'turnover_rate'
+    turnOverRate.index.name = 'date'
 
     return pd.DataFrame(turnOverRate)
 
