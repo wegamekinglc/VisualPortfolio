@@ -38,9 +38,16 @@ def aggregateTranscations(transcations, convert='daily'):
 
 def calculatePosWeight(pos):
 
+    pos_wo_cash = pos.drop('cash', axis=1)
+    longs = pos_wo_cash[pos_wo_cash > 0].sum(axis=1).fillna(0)
+    shorts = pos_wo_cash[pos_wo_cash < 0].abs().sum(axis=1).fillna(0)
+
+    cash = pos.cash
+    net_liquidation = longs + shorts + cash
+
     return pos.divide(
-        pos.abs().sum(axis='columns'),
-        axis='rows'
+        net_liquidation,
+        axis='index'
     )
 
 
@@ -137,7 +144,8 @@ def RollingSharp(returns, month_windows):
         for ret in returns:
             rscalc.push({'ret': ret, 'riskFree': 0})
             try:
-                res.append(rscalc.result())
+                # in PyFin, sharp is not annualized
+                res.append(rscalc.result() * sqrt(APPROX_BDAYS_PER_YEAR))
             except ZeroDivisionError:
                 res.append(np.nan)
         return res
