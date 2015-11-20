@@ -14,7 +14,7 @@ import numpy as np
 from VisualPortfolio.Timeseries import aggregateReturns
 from VisualPortfolio.Timeseries import RollingBeta
 from VisualPortfolio.Timeseries import RollingSharp
-from Transactions import getTurnOver
+from VisualPortfolio.Transactions import getTurnOver
 
 
 def plotting_context(func):
