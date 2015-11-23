@@ -9,3 +9,6 @@ from VisualPortfolio.Tears import createPerformanceTearSheet
 from VisualPortfolio.Tears import createPostionTearSheet
 from VisualPortfolio.Tears import createTranscationTearSheet
 from VisualPortfolio.Tears import createAllTearSheet
+
+
+__version__ = '0.1.1'

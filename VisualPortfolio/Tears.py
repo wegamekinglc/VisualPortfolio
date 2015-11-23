@@ -34,7 +34,7 @@ from VisualPortfolio.Plottings import plottingHodings
 from VisualPortfolio.Plottings import plottingTurnover
 from VisualPortfolio.Timeseries import APPROX_BDAYS_PER_MONTH
 import tushare as ts
-from PyFin.API import advanceDateByCalendar
+from PyFin.api import advanceDateByCalendar
 from PyFin.Enums import BizDayConventions
 
 
