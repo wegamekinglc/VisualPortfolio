@@ -33,6 +33,8 @@ from VisualPortfolio.Plottings import plottingTopExposure
 from VisualPortfolio.Plottings import plottingHodings
 from VisualPortfolio.Plottings import plottingTurnover
 from VisualPortfolio.Timeseries import APPROX_BDAYS_PER_MONTH
+from VisualPortfolio.Timeseries import RollingBeta
+from VisualPortfolio.Timeseries import RollingSharp
 import tushare as ts
 from PyFin.api import advanceDateByCalendar
 from PyFin.Enums import BizDayConventions
@@ -128,10 +130,17 @@ def createPerformanceTearSheet(prices=None, returns=None, benchmark=None, benchm
         benchmarkCumReturns.name = benchmarkReturns.name
         accessCumReturns = perf_df['access_cum_return']
         accessReturns = perf_df['access_return']
+        rb = RollingBeta(perf_df['daily_return'], perf_df['benchmark_return'], [1, 3, 6])
+        rs = RollingSharp(perf_df['daily_return'], [1, 3, 6])
     else:
         benchmarkCumReturns = None
         accessReturns = None
         accessCumReturns = None
+
+    if len(perf_df['daily_return']) > APPROX_BDAYS_PER_MONTH and benchmarkCumReturns is not None:
+        rollingRisk = pd.concat([pd.concat(rs, axis=1), pd.concat(rb, axis=1)], axis=1)
+    else:
+        rollingRisk = None
 
     if plot:
         verticalSections = 2
@@ -144,20 +153,15 @@ def createPerformanceTearSheet(prices=None, returns=None, benchmark=None, benchm
         plottingRollingReturn(perf_df['daily_cum_return'], benchmarkCumReturns, axRollingReturns)
         plottingDrawdownPeriods(perf_df['daily_cum_return'], drawDownDaily, 5, axDrawDown)
 
-        if len(perf_df['daily_return']) > APPROX_BDAYS_PER_MONTH and benchmarkCumReturns is not None:
+        if rollingRisk is not None:
             plt.figure(figsize=(16, 7 * verticalSections))
             gs = gridspec.GridSpec(verticalSections, 3, wspace=0.5, hspace=0.5)
             axRollingBeta = plt.subplot(gs[0, :])
             axRollingSharp = plt.subplot(gs[1, :])
 
-            benchmarkDailyReturns = perf_df['benchmark_return']
-            benchmarkDailyReturns.name = benchmarkReturns.name
-            _, rollingBeta = plottingRollingBeta(perf_df['daily_return'], benchmarkDailyReturns, ax=axRollingBeta)
-            _, rollingSharp = plottingRollingSharp(perf_df['daily_return'], ax=axRollingSharp)
-
-            rollingRisk = pd.concat([rollingBeta, rollingSharp], axis=1)
-        else:
-            rollingRisk = None
+            bmName = benchmarkReturns.name
+            plottingRollingBeta(rb, bmName, ax=axRollingBeta)
+            plottingRollingSharp(rs, ax=axRollingSharp)
 
         plt.figure(figsize=(16, 7 * verticalSections))
         gs = gridspec.GridSpec(verticalSections, 3, wspace=0.5, hspace=0.5)
@@ -171,8 +175,6 @@ def createPerformanceTearSheet(prices=None, returns=None, benchmark=None, benchm
         plottingMonthlyReturnsHeapmap(returns, axMonthlyHeatmap)
         plottingAnnualReturns(returns, axAnnualReturns)
         plottingMonthlyRetDist(returns, axMonthlyDist)
-    else:
-        rollingRisk = None
 
     if accessReturns is not None and plot:
          plt.figure(figsize=(16, 7 * verticalSections))
