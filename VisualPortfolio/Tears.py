@@ -246,12 +246,3 @@ def createAllTearSheet(positions, transcations, prices=None, returns=None, bench
     createPostionTearSheet(position=positions, plot=plot)
     createTranscationTearSheet(position=positions, transcations=transcations, plot=plot)
     return perf_metric, perf_df
-
-if __name__ == "__main__":
-    #from pandas_datareader import data
-    #prices = data.get_data_yahoo('600000.ss')
-    #benchmark = data.get_data_yahoo('000300.ss')
-    from DataAPI import api
-    sample_prices = api.GetEquityBarMin1('600000', '2012-10-01', '2015-11-09')
-    perf_matric, perf_df, rolllingRisk = createPerformanceTearSheet(prices=sample_prices['closePrice'], benchmark='000300.zicn')
-    plt.show()

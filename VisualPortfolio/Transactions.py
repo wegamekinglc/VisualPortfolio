@@ -10,6 +10,7 @@ def getTurnOver(transactions, positions, period=None, average=True):
 
     tradedValue = transactions.turnover_value
     portfolioValue = positions.abs().sum(axis=1)
+    portfolioValue[portfolioValue == 0] = portfolioValue.mean()
     if period:
         tradedValue = tradedValue.resample(period, how="sum")
         portfolioValue = portfolioValue.resample(period, how="mean")
