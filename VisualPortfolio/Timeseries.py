@@ -38,17 +38,22 @@ def aggregateTranscations(transcations, convert='daily'):
 
 def calculatePosWeight(pos):
 
-    pos_wo_cash = pos.drop('cash', axis=1)
+    if 'cash' in pos:
+        pos_wo_cash = pos.drop('cash', axis=1)
+        cash = pos.cash
+    else:
+        pos_wo_cash = pos
+        cash = 0.
+
     longs = pos_wo_cash[pos_wo_cash > 0].sum(axis=1).fillna(0)
     shorts = pos_wo_cash[pos_wo_cash < 0].abs().sum(axis=1).fillna(0)
 
-    cash = pos.cash
     net_liquidation = longs + shorts + cash
 
     return pos.divide(
         net_liquidation,
         axis='index'
-    )
+    ).fillna(0.)
 
 
 def aggregateReturns(returns, convert='daily'):
