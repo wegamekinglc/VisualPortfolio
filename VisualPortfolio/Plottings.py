@@ -48,7 +48,7 @@ def two_dec_places(x, pos):
 
 
 def percentage(x, pos):
-    return '%.0f%%' % (x * 100)
+    return '%.2f%%' % (x * 100)
 
 
 def plottingRollingReturn(cumReturns, benchmarkReturns, ax, title='Strategy Cumulative Returns'):
@@ -158,7 +158,7 @@ def plottingUnderwater(drawDownSeries, ax, title='Underwater Plot'):
 def plottingMonthlyReturnsHeapmap(returns, ax, title='Monthly Returns (%)'):
     monthlyRetTable = aggregateReturns(returns, 'monthly')
     monthlyRetTable = monthlyRetTable.unstack()
-    sns.heatmap(monthlyRetTable.fillna(0) * 100.0,
+    sns.heatmap((np.exp(monthlyRetTable.fillna(0)) - 1.0) * 100.0,
                 annot=True,
                 fmt=".1f",
                 annot_kws={"size": 9},
@@ -234,7 +234,10 @@ def plottingMonthlyRetDist(returns, ax, title="Distribution of Monthly Returns")
 def plottingExposure(positions, ax, title="Total non cash exposure (%)"):
     y_axis_formatter = FuncFormatter(two_dec_places)
     ax.yaxis.set_major_formatter(FuncFormatter(y_axis_formatter))
-    positions_without_cash = positions.drop('cash', axis='columns')
+    if 'cash' in positions:
+        positions_without_cash = positions.drop('cash', axis='columns')
+    else:
+        positions_without_cash = positions
     longs = positions_without_cash[positions_without_cash > 0].sum(axis=1).fillna(0) * 100
     shorts = positions_without_cash[positions_without_cash < 0].abs().sum(axis=1).fillna(0) * 100
     df_long_short = pd.DataFrame({'long': longs,
@@ -256,7 +259,8 @@ def plottingTopExposure(positions, ax, top=10, title="Top 10 securities exposure
 
 
 def plottingHodings(positions, ax, title="Holdings per Day"):
-    positions = positions.drop('cash', axis='columns')
+    if 'cash' in positions:
+        positions = positions.drop('cash', axis='columns')
     df_holdings = positions.apply(lambda x: np.sum(x != 0), axis='columns')
     df_holdings_by_month = df_holdings.resample('1M', how='mean')
     df_holdings.plot(color='steelblue', alpha=0.6, lw=0.5, ax=ax)
