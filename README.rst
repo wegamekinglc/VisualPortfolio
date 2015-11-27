@@ -1,9 +1,13 @@
+------------------------------------------------------------
+|Join the chat at https://gitter.im/chinaquants/algotrading|
+------------------------------------------------------------
+
 VisualPortfolio
 =========================
 
-将策略或者资产包的表现可视化。大量参考以及模仿自[pyfolio](https://github.com/quantopian/pyfolio)，包括图的配置以及代码。
+将策略或者资产包的表现可视化。大量参考以及模仿自 `pyfolio <https://github.com/quantopian/pyfolio>`_ ，包括图的配置以及代码。
 
-This tool is used to visualize the perfomance of a portfolio. Much of the codes and samples come from the original referenced project:[pyfolio](https://github.com/quantopian/pyfolio)
+This tool is used to visualize the perfomance of a portfolio. Much of the codes and samples come from the original referenced project: `pyfolio <https://github.com/quantopian/pyfolio>`_
 
 依赖
 ----------------------
@@ -49,12 +53,17 @@ This tool is used to visualize the perfomance of a portfolio. Much of the codes 
   In [6]: perf_matric, perf_df = createPerformanceTearSheet(prices=prices, benchmark=benchmark)
 
 
-![overview](img/1.png)
+.. image:: img/1.png
+    :align: center
 
-![returns distribution](img/2.png)
+.. image:: img/2.png
+    :align: center
 
-![access overview](img/3.png)
+.. image:: img/3.png
+    :align: center
 
-![access returns distribution](img/4.png)
+.. image:: img/4.png
+    :align: center
 
-
+.. |Join the chat at https://gitter.im/chinaquants/algotrading| image:: https://badges.gitter.im/Join%20Chat.svg
+   :target: https://gitter.im/chinaquants/algotrading?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge
