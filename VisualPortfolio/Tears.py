@@ -57,7 +57,7 @@ def createPerformanceTearSheet(prices=None, returns=None, benchmark=None, benchm
         returns = returns[~np.isinf(returns)]
 
     if benchmark is not None and isinstance(benchmark, str) and benchmarkReturns is None:
-        startDate = advanceDateByCalendar("China.SSE", returns.index[0], '-1b', BizDayConventions.Preceding)
+        startDate = advanceDateByCalendar("China.SSE", prices.index[0], '-1b', BizDayConventions.Preceding)
         try:
             token = os.environ['DATAYES_TOKEN']
             ts.set_token(token)
@@ -70,6 +70,13 @@ def createPerformanceTearSheet(prices=None, returns=None, benchmark=None, benchm
                                               field='tradeDate,closeIndex')
         benchmarkPrices['tradeDate'] = pd.to_datetime(benchmarkPrices['tradeDate'], format="%Y-%m-%d")
         benchmarkPrices.set_index('tradeDate', inplace=True)
+
+        # do the linear interpolation on the target time line
+        date_index = prices.index
+        new_index = benchmarkPrices.index.union(date_index)
+        benchmarkPrices = benchmarkPrices.reindex(new_index)
+        benchmarkPrices = benchmarkPrices.interpolate().ix[date_index].dropna()
+
         benchmarkPrices.columns = ['close']
         benchmarkReturns = np.log(benchmarkPrices['close'] / benchmarkPrices['close'].shift(1))
         benchmarkReturns.name = benchmark
