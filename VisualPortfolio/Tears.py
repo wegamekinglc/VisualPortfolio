@@ -35,9 +35,9 @@ from VisualPortfolio.Plottings import plottingTurnover
 from VisualPortfolio.Timeseries import APPROX_BDAYS_PER_MONTH
 from VisualPortfolio.Timeseries import RollingBeta
 from VisualPortfolio.Timeseries import RollingSharp
-import tushare as ts
 from PyFin.api import advanceDateByCalendar
 from PyFin.Enums import BizDayConventions
+from DataAPI import api
 
 
 @plotting_context
@@ -58,18 +58,11 @@ def createPerformanceTearSheet(prices=None, returns=None, benchmark=None, benchm
 
     if benchmark is not None and isinstance(benchmark, str) and benchmarkReturns is None:
         startDate = advanceDateByCalendar("China.SSE", prices.index[0], '-1b', BizDayConventions.Preceding)
-        try:
-            token = os.environ['DATAYES_TOKEN']
-            ts.set_token(token)
-        except KeyError:
-            raise ValueError("Please input token or set up DATAYES_TOKEN in the envirement.")
 
-        benchmarkPrices = ts.Market().MktIdxd(indexID=benchmark,
-                                              beginDate=startDate.strftime('%Y%m%d'),
-                                              endDate=returns.index[-1].strftime("%Y%m%d"),
-                                              field='tradeDate,closeIndex')
-        benchmarkPrices['tradeDate'] = pd.to_datetime(benchmarkPrices['tradeDate'], format="%Y-%m-%d")
-        benchmarkPrices.set_index('tradeDate', inplace=True)
+        benchmarkPrices = api.GetIndexBarEOD(instrumentIDList=benchmark,
+                                             startDate=startDate.strftime('%Y-%m-%d'),
+                                             endDate=returns.index[-1].strftime("%Y-%m-%d"),
+                                             field=['closePriece'])
 
         # do the linear interpolation on the target time line
         date_index = prices.index
@@ -77,8 +70,7 @@ def createPerformanceTearSheet(prices=None, returns=None, benchmark=None, benchm
         benchmarkPrices = benchmarkPrices.reindex(new_index)
         benchmarkPrices = benchmarkPrices.interpolate().ix[date_index].dropna()
 
-        benchmarkPrices.columns = ['close']
-        benchmarkReturns = np.log(benchmarkPrices['close'] / benchmarkPrices['close'].shift(1))
+        benchmarkReturns = np.log(benchmarkPrices['closePrice'] / benchmarkPrices['closePrice'].shift(1))
         benchmarkReturns.name = benchmark
         benchmarkReturns.dropna(inplace=True)
         benchmarkReturns.index = pd.to_datetime(benchmarkReturns.index.date)
@@ -248,8 +240,9 @@ def createTranscationTearSheet(transactions, positions, plot=True):
 
 
 @plotting_context
-def createAllTearSheet(positions, transcations, prices=None, returns=None, benchmark=None, plot=True):
-    perf_metric, perf_df = createPerformanceTearSheet(prices=prices, returns=returns, benchmark=benchmark, plot=plot)
+def createAllTearSheet(positions, transcations=None, prices=None, returns=None, benchmark=None, plot=True):
+    perf_metric, perf_df, rollingRisk = createPerformanceTearSheet(prices=prices, returns=returns, benchmark=benchmark, plot=plot)
     createPostionTearSheet(position=positions, plot=plot)
-    createTranscationTearSheet(position=positions, transcations=transcations, plot=plot)
-    return perf_metric, perf_df
+    if transcations:
+        createTranscationTearSheet(position=positions, transcations=transcations, plot=plot)
+    return perf_metric, perf_df, rollingRisk

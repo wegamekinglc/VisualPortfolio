@@ -156,7 +156,7 @@ def plottingUnderwater(drawDownSeries, ax, title='Underwater Plot'):
 
 
 def plottingMonthlyReturnsHeapmap(returns, ax, title='Monthly Returns (%)'):
-    monthlyRetTable = aggregateReturns(returns, 'monthly')
+    monthlyRetTable = pd.DataFrame(aggregateReturns(returns, 'monthly'))
     monthlyRetTable = monthlyRetTable.unstack()
     sns.heatmap((np.exp(monthlyRetTable.fillna(0)) - 1.0) * 100.0,
                 annot=True,
@@ -179,6 +179,7 @@ def plottingAnnualReturns(returns, ax, title='Annual Returns'):
     ax.tick_params(axis='x', which='major', labelsize=10)
 
     annulaReturns = pd.DataFrame(aggregateReturns(returns, 'yearly'))
+    annulaReturns = np.exp(annulaReturns) - 1.
 
     ax.axvline(annulaReturns.values.mean(),
                color='steelblue',
@@ -207,13 +208,15 @@ def plottingMonthlyRetDist(returns, ax, title="Distribution of Monthly Returns")
     ax.tick_params(axis='x', which='major', labelsize=10)
 
     monthlyRetTable = aggregateReturns(returns, 'monthly')
+    monthlyRetTable = np.exp(monthlyRetTable) - 1.
 
-    ax.hist(
-        monthlyRetTable,
-        color='orange',
-        alpha=0.8,
-        bins=20
-    )
+    if len(monthlyRetTable) > 1:
+        ax.hist(
+            monthlyRetTable,
+            color='orange',
+            alpha=0.8,
+            bins=20
+        )
 
     ax.axvline(
         monthlyRetTable.mean(),
