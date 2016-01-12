@@ -50,15 +50,3 @@ def portfolioAnalysis(posDF,
     return perf_metric, perf_df, rollingRisk
 
 
-if __name__ == "__main__":
-
-    from matplotlib import pyplot as plt
-
-    df = pd.DataFrame(data={'instrumentID': ['600000', '000001'],
-                            'position': [0.5, 0.5]})
-
-    portfolioAnalysis(df, startDate='2015-01-01', endDate='2016-01-01', isweight=True)
-
-    plt.show()
-
-

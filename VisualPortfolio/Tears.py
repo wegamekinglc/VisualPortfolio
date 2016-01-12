@@ -53,7 +53,7 @@ def createPerformanceTearSheet(prices=None, returns=None, benchmark=None, benchm
 
     if returns is None:
         returns = np.log(prices / prices.shift(1))
-        returns.dropna(inplace=True)
+        returns.fillna(0, inplace=True)
         returns = returns[~np.isinf(returns)]
 
     if benchmark is not None and isinstance(benchmark, str) and benchmarkReturns is None:
@@ -72,7 +72,7 @@ def createPerformanceTearSheet(prices=None, returns=None, benchmark=None, benchm
 
         benchmarkReturns = np.log(benchmarkPrices['closePrice'] / benchmarkPrices['closePrice'].shift(1))
         benchmarkReturns.name = benchmark
-        benchmarkReturns.dropna(inplace=True)
+        benchmarkReturns.fillna(0, inplace=True)
         benchmarkReturns.index = pd.to_datetime(benchmarkReturns.index.date)
     elif benchmark is not None and isinstance(benchmark, pd.Series):
         benchmarkReturns = np.log(benchmark / benchmark.shift(1))
