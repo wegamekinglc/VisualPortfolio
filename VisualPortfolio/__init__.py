@@ -12,4 +12,4 @@ from VisualPortfolio.Tears import createAllTearSheet
 from VisualPortfolio.Miscellaneous import portfolioAnalysis
 
 
-__version__ = '0.1.3'
+__version__ = '0.1.4'
