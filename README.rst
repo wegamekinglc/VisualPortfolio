@@ -25,7 +25,7 @@ This tool is used to visualize the perfomance of a portfolio. Much of the codes 
 安装
 ----------------------
 
-首先将代码``clone``至本地：
+首先将代码 ``clone`` 至本地：
 
 ::
 
