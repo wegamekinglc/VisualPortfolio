@@ -5,7 +5,6 @@ Created on 2015-11-9
 @author: cheng.li
 """
 
-import os
 import numpy as np
 import pandas as pd
 import matplotlib.gridspec as gridspec
@@ -35,9 +34,40 @@ from VisualPortfolio.Plottings import plottingTurnover
 from VisualPortfolio.Timeseries import APPROX_BDAYS_PER_MONTH
 from VisualPortfolio.Timeseries import RollingBeta
 from VisualPortfolio.Timeseries import RollingSharp
+from VisualPortfolio.Env import Settings
+from VisualPortfolio.Env import DataSource
 from PyFin.api import advanceDateByCalendar
 from PyFin.Enums import BizDayConventions
 from DataAPI import api
+
+
+def get_benchmark_data(benchmark, start_date, end_data):
+
+    if Settings.data_source == DataSource.DXDataCenter:
+        benchmark_data = api.GetIndexBarEOD(instrumentIDList=benchmark,
+                                            startDate=start_date,
+                                            endDate=end_data,
+                                            field=['closePrice'])
+    elif Settings.data_source == DataSource.DataYes:
+        import os
+        import tushare as ts
+
+        try:
+            ts.set_token(os.environ['DATAYES_TOKEN'])
+        except KeyError:
+            raise
+
+        mt = ts.Market()
+
+        benchmark_data = mt.MktIdxd(benchmark,
+                                    beginDate=start_date.replace('-', ''),
+                                    endDate=end_data.replace('-', ''),
+                                    field='closeIndex,tradeDate')
+        benchmark_data = benchmark_data.set_index('tradeDate')
+        benchmark_data = benchmark_data.rename(columns={'closeIndex': 'closePrice'})
+        benchmark_data.index = pd.to_datetime(benchmark_data.index, format="%Y-%m-%d")
+
+    return benchmark_data
 
 
 @plotting_context
@@ -59,10 +89,9 @@ def createPerformanceTearSheet(prices=None, returns=None, benchmark=None, benchm
     if benchmark is not None and isinstance(benchmark, str) and benchmarkReturns is None:
         startDate = advanceDateByCalendar("China.SSE", prices.index[0], '-1b', BizDayConventions.Preceding)
 
-        benchmarkPrices = api.GetIndexBarEOD(instrumentIDList=benchmark,
-                                             startDate=startDate.strftime('%Y-%m-%d'),
-                                             endDate=returns.index[-1].strftime("%Y-%m-%d"),
-                                             field=['closePriece'])
+        benchmarkPrices = get_benchmark_data(benchmark,
+                                             start_date=startDate.strftime('%Y-%m-%d'),
+                                             end_data=returns.index[-1].strftime("%Y-%m-%d"))
 
         # do the linear interpolation on the target time line
         date_index = prices.index

@@ -10,6 +10,43 @@ import pandas as pd
 from DataAPI import api
 from VisualPortfolio.Plottings import plotting_context
 from VisualPortfolio.Tears import createPerformanceTearSheet
+from VisualPortfolio.Env import DataSource
+from VisualPortfolio.Env import Settings
+
+
+def get_equity_eod(instruments, start_date, end_date):
+    if Settings.data_source == DataSource.DXDataCenter:
+        data = api.GetEquityBarEOD(instrumentIDList=instruments,
+                                   startDate=start_date,
+                                   endDate=end_date,
+                                   field='closePrice',
+                                   instrumentIDasCol=True,
+                                   baseDate='end')
+    elif Settings.data_source == DataSource.DataYes:
+        import os
+        import tushare as ts
+
+        try:
+            ts.set_token(os.environ['DATAYES_TOKEN'])
+        except KeyError:
+            raise
+
+        mt = ts.Market()
+        res = []
+        for ins in instruments:
+            data = mt.MktEqud(ticker=ins,
+                              beginDate=start_date.replace('-', ''),
+                              endDate=end_date.replace('-', ''),
+                              field='tradeDate,ticker,closePrice')
+            res.append(data)
+
+        data = pd.concat(res)
+        data['tradeDate'] = pd.to_datetime(data['tradeDate'], format='%Y-%m-%d')
+        data['ticker'] = data['ticker'].apply(lambda x: '{0:06d}'.format(x))
+        data.set_index(['tradeDate', 'ticker'], inplace=True, verify_integrity=True)
+        data = data.unstack(level=-1)
+
+    return data
 
 
 @plotting_context
@@ -22,12 +59,9 @@ def portfolioAnalysis(posDF,
 
     secIDs = posDF['instrumentID']
 
-    data = api.GetEquityBarEOD(instrumentIDList=secIDs,
-                               startDate=startDate,
-                               endDate=endDate,
-                               field='closePrice',
-                               instrumentIDasCol=True,
-                               baseDate='end')
+    data = get_equity_eod(instruments=secIDs,
+                          start_date=startDate,
+                          end_date=endDate)
 
     close_data = data['closePrice']
     close_data = close_data.fillna(method='pad')
@@ -50,3 +84,10 @@ def portfolioAnalysis(posDF,
     return perf_metric, perf_df, rollingRisk
 
 
+if __name__ == "__main__":
+    import pandas as pd
+    data = pd.read_excel('d:/basket.xlsx')
+    data.instrumentID = data.instrumentID.apply(lambda x: "{0:06d}".format(x))
+
+    Settings.set_source(DataSource.DataYes)
+    res = portfolioAnalysis(data, '2006-01-01', '2016-01-15')

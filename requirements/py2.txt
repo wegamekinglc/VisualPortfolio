@@ -1,3 +1,4 @@
+enum34>=1.0.4
 Finance-Python>=0.3.14
 lxml>=3.4.4
 matplotlib>=1.4.3

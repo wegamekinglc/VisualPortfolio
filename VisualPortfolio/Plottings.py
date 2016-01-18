@@ -43,12 +43,20 @@ def context(context='notebook', font_scale=1.5, rc=None):
                                 rc=rc)
 
 
+def integer_format(x, pos):
+    return '%d' % x
+
+
 def two_dec_places(x, pos):
     return '%.2f' % x
 
 
 def percentage(x, pos):
     return '%.2f%%' % (x * 100)
+
+
+def zero_dec_percentage(x, pos):
+    return '%.0f%%' % (x * 100)
 
 
 def plottingRollingReturn(cumReturns, benchmarkReturns, ax, title='Strategy Cumulative Returns'):
@@ -156,8 +164,11 @@ def plottingUnderwater(drawDownSeries, ax, title='Underwater Plot'):
 
 
 def plottingMonthlyReturnsHeapmap(returns, ax, title='Monthly Returns (%)'):
+    x_axis_formatter = FuncFormatter(integer_format)
+    ax.xaxis.set_major_formatter(FuncFormatter(x_axis_formatter))
     monthlyRetTable = pd.DataFrame(aggregateReturns(returns, 'monthly'))
     monthlyRetTable = monthlyRetTable.unstack()
+    monthlyRetTable.columns = monthlyRetTable.columns.droplevel()
     sns.heatmap((np.exp(monthlyRetTable.fillna(0)) - 1.0) * 100.0,
                 annot=True,
                 fmt=".1f",
@@ -174,7 +185,7 @@ def plottingMonthlyReturnsHeapmap(returns, ax, title='Monthly Returns (%)'):
 
 
 def plottingAnnualReturns(returns, ax, title='Annual Returns'):
-    x_axis_formatter = FuncFormatter(percentage)
+    x_axis_formatter = FuncFormatter(zero_dec_percentage)
     ax.xaxis.set_major_formatter(FuncFormatter(x_axis_formatter))
     ax.tick_params(axis='x', which='major', labelsize=10)
 
@@ -203,7 +214,7 @@ def plottingAnnualReturns(returns, ax, title='Annual Returns'):
 
 
 def plottingMonthlyRetDist(returns, ax, title="Distribution of Monthly Returns"):
-    x_axis_formatter = FuncFormatter(percentage)
+    x_axis_formatter = FuncFormatter(zero_dec_percentage)
     ax.xaxis.set_major_formatter(FuncFormatter(x_axis_formatter))
     ax.tick_params(axis='x', which='major', labelsize=10)
 
