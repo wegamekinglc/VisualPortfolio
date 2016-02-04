@@ -256,7 +256,7 @@ def plottingExposure(positions, ax, title="Total non cash exposure (%)"):
     shorts = positions_without_cash[positions_without_cash < 0].abs().sum(axis=1).fillna(0) * 100
     df_long_short = pd.DataFrame({'long': longs,
                                   'short': shorts})
-    df_long_short.plot(kind='area', color=['lightblue', 'green'], alpha=1.0, ax=ax)
+    df_long_short.plot(kind='area', stacked=True, color=['blue', 'green'], linewidth=0., ax=ax)
     ax.set_title(title)
     return ax
 

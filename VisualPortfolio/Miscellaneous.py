@@ -6,7 +6,6 @@ Created on 2016-1-8
 @author: cheng.li
 """
 
-import pandas as pd
 from DataAPI import api
 from VisualPortfolio.Plottings import plotting_context
 from VisualPortfolio.Tears import createPerformanceTearSheet
