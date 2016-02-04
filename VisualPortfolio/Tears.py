@@ -38,7 +38,7 @@ from VisualPortfolio.Env import Settings
 from VisualPortfolio.Env import DataSource
 from PyFin.api import advanceDateByCalendar
 from PyFin.Enums import BizDayConventions
-from DataAPI import api
+from PyFin.api import bizDatesList
 
 
 def get_benchmark_data(benchmark, start_date, end_data):
@@ -158,8 +158,15 @@ def createPerformanceTearSheet(prices=None, returns=None, benchmark=None, benchm
         benchmarkCumReturns.name = benchmarkReturns.name
         accessCumReturns = perf_df['access_cum_return']
         accessReturns = perf_df['access_return']
-        rb = RollingBeta(perf_df['daily_return'], perf_df['benchmark_return'], [1, 3, 6])
-        rs = RollingSharp(perf_df['daily_return'], [1, 3, 6])
+
+        index = perf_df.index
+
+        length1 = len(bizDatesList('China.SSE', index[0], index[-1]))
+        length2 = len(perf_df)
+        factor = length1 / float(length2)
+
+        rb = RollingBeta(perf_df['daily_return'], perf_df['benchmark_return'], [1, 3, 6], factor=factor)
+        rs = RollingSharp(perf_df['daily_return'], [1, 3, 6], factor=factor)
     else:
         benchmarkCumReturns = None
         accessReturns = None
@@ -275,3 +282,13 @@ def createAllTearSheet(positions, transcations=None, prices=None, returns=None, 
     if transcations:
         createTranscationTearSheet(position=positions, transcations=transcations, plot=plot)
     return perf_metric, perf_df, rollingRisk
+
+
+if __name__ == "__main__":
+    from DataAPI import api
+    from matplotlib import pyplot as plt
+
+    data = api.GetHedgeFundBarWeek('XT1410004.XT')
+
+    createPerformanceTearSheet(data.navAcc, benchmark='000300.zicn')
+    plt.show()

@@ -122,11 +122,11 @@ def sharpRatio(returns):
     return annualRet / annualVol
 
 
-def RollingBeta(returns, benchmarkReturns, month_windows):
+def RollingBeta(returns, benchmarkReturns, month_windows, factor):
 
     def calculateSingalWindowBete(returns, benchmarkReturns, window):
         res = []
-        rbcalc = MovingAlphaBeta(window=window * APPROX_BDAYS_PER_MONTH)
+        rbcalc = MovingAlphaBeta(window=int(window * APPROX_BDAYS_PER_MONTH))
         for pRet, mRet in zip(returns, benchmarkReturns):
             rbcalc.push({'pRet': pRet, 'mRet': mRet, 'riskFree': 0})
             try:
@@ -135,27 +135,27 @@ def RollingBeta(returns, benchmarkReturns, month_windows):
                 res.append(np.nan)
         return res
 
-    rtn = [pd.Series(calculateSingalWindowBete(returns, benchmarkReturns, window), index=returns.index)
+    rtn = [pd.Series(calculateSingalWindowBete(returns, benchmarkReturns, window / factor), index=returns.index)
            for window in month_windows]
 
-    return {"beta_{0}m".format(window): res[APPROX_BDAYS_PER_MONTH*min(month_windows):] for window, res in zip(month_windows, rtn)}
+    return {"beta_{0}m".format(window): res[int(APPROX_BDAYS_PER_MONTH*min(month_windows) / factor):] for window, res in zip(month_windows, rtn)}
 
 
-def RollingSharp(returns, month_windows):
+def RollingSharp(returns, month_windows, factor):
 
-    def calculateSingalWindowSharp(returns, window):
+    def calculateSingalWindowSharp(returns, window, factor):
         res = []
-        rscalc = MovingSharp(window=window * APPROX_BDAYS_PER_MONTH)
+        rscalc = MovingSharp(window=int(window * APPROX_BDAYS_PER_MONTH))
         for ret in returns:
             rscalc.push({'ret': ret, 'riskFree': 0})
             try:
                 # in PyFin, sharp is not annualized
-                res.append(rscalc.result() * sqrt(APPROX_BDAYS_PER_YEAR))
+                res.append(rscalc.result() * sqrt(APPROX_BDAYS_PER_YEAR / factor))
             except ZeroDivisionError:
                 res.append(np.nan)
         return res
 
-    rtn = [pd.Series(calculateSingalWindowSharp(returns, window), index=returns.index)
+    rtn = [pd.Series(calculateSingalWindowSharp(returns, window / factor, factor), index=returns.index)
            for window in month_windows]
 
-    return {"sharp_{0}m".format(window): res[APPROX_BDAYS_PER_MONTH*min(month_windows):] for window, res in zip(month_windows, rtn)}
+    return {"sharp_{0}m".format(window): res[int(APPROX_BDAYS_PER_MONTH*min(month_windows) / factor):] for window, res in zip(month_windows, rtn)}
