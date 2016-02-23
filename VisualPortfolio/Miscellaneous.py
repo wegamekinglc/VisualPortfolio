@@ -6,7 +6,6 @@ Created on 2016-1-8
 @author: cheng.li
 """
 
-from DataAPI import api
 from VisualPortfolio.Plottings import plotting_context
 from VisualPortfolio.Tears import createPerformanceTearSheet
 from VisualPortfolio.Env import DataSource
@@ -15,6 +14,7 @@ from VisualPortfolio.Env import Settings
 
 def get_equity_eod(instruments, start_date, end_date):
     if Settings.data_source == DataSource.DXDataCenter:
+        from DataAPI import api
         data = api.GetEquityBarEOD(instrumentIDList=instruments,
                                    startDate=start_date,
                                    endDate=end_date,
