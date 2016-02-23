@@ -113,13 +113,19 @@ def annualVolatility(returns):
 def sortinoRatio(returns):
     annualRet = annualReturn(returns)
     annualNegativeVol = annualVolatility(returns[returns < 0.0])
-    return annualRet / annualNegativeVol
+    if annualNegativeVol != 0.:
+        return annualRet / annualNegativeVol
+    else:
+        return np.nan
 
 
 def sharpRatio(returns):
     annualRet = annualReturn(returns)
     annualVol = annualVolatility(returns)
-    return annualRet / annualVol
+    if annualVol != 0.:
+        return annualRet / annualVol
+    else:
+        return np.nan
 
 
 def RollingBeta(returns, benchmarkReturns, month_windows, factor):
