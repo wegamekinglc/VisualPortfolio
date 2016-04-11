@@ -122,6 +122,7 @@ def sortinoRatio(returns):
 def sharpRatio(returns):
     annualRet = annualReturn(returns)
     annualVol = annualVolatility(returns)
+
     if annualVol != 0.:
         return annualRet / annualVol
     else:
