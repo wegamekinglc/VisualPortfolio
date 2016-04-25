@@ -56,7 +56,7 @@ def percentage(x, pos):
 
 
 def zero_dec_percentage(x, pos):
-    return '%.0f%%' % (x * 100)
+    return '%.1f%%' % (x * 100)
 
 
 def plottingRollingReturn(cumReturns, benchmarkReturns, ax, title='Strategy Cumulative Returns'):
