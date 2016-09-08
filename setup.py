@@ -10,7 +10,7 @@ from setuptools import setup
 
 PACKAGE = "VisualPortfolio"
 NAME = "VisualPortfolio"
-VERSION = "0.1.6"
+VERSION = "0.1.7"
 DESCRIPTION = "VisualPortfolio " + VERSION
 AUTHOR = "cheng li"
 AUTHOR_EMAIL = "wegamekinglc@hotmail.com"

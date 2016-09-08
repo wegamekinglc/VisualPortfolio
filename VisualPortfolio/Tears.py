@@ -39,6 +39,7 @@ from VisualPortfolio.Env import DataSource
 from PyFin.api import advanceDateByCalendar
 from PyFin.Enums import BizDayConventions
 from PyFin.api import bizDatesList
+from DataAPI import api
 
 
 def get_benchmark_data(benchmark, start_date, end_data):
@@ -183,7 +184,7 @@ def createPerformanceTearSheet(prices=None, returns=None, benchmark=None, benchm
         gs = gridspec.GridSpec(verticalSections, 3, wspace=0.5, hspace=0.5)
 
         axRollingReturns = plt.subplot(gs[0, :])
-        axDrawDown = plt.subplot(gs[1, :], sharex=axRollingReturns)
+        axDrawDown = plt.subplot(gs[1, :])
 
         plottingRollingReturn(perf_df['daily_cum_return'], benchmarkCumReturns, axRollingReturns)
         plottingDrawdownPeriods(perf_df['daily_cum_return'], drawDownDaily, 5, axDrawDown)
@@ -287,8 +288,12 @@ def createAllTearSheet(positions, transcations=None, prices=None, returns=None, 
 if __name__ == "__main__":
     from DataAPI import api
     from matplotlib import pyplot as plt
+    from VisualPortfolio import Settings
+    from VisualPortfolio import DataSource
 
-    data = api.GetHedgeFundBarWeek('XT1410004.XT')
+    Settings.set_source(DataSource.DXDataCenter)
 
-    createPerformanceTearSheet(data.navAcc, benchmark='000300.zicn')
+    data = api.GetEquityBarEOD('600000', '2012-01-01', '2015-10-01')
+
+    createPerformanceTearSheet(data['closePrice'], benchmark='000300.zicn')
     plt.show()

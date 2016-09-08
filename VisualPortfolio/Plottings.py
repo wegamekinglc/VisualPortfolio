@@ -276,7 +276,7 @@ def plottingHodings(positions, ax, title="Holdings per Day"):
     if 'cash' in positions:
         positions = positions.drop('cash', axis='columns')
     df_holdings = positions.apply(lambda x: np.sum(x != 0), axis='columns')
-    df_holdings_by_month = df_holdings.resample('1M', how='mean')
+    df_holdings_by_month = df_holdings.resample('1M').mean()
     df_holdings.plot(color='steelblue', alpha=0.6, lw=0.5, ax=ax)
     df_holdings_by_month.plot(
         color='orangered',
@@ -305,7 +305,7 @@ def plottingHodings(positions, ax, title="Holdings per Day"):
 def plottingTurnover(transactions, positions, ax=None, title="Daily Turnover"):
 
     df_turnover = getTurnOver(transactions, positions)
-    df_turnover_by_month = df_turnover.resample('M')
+    df_turnover_by_month = df_turnover.resample('M').sum()
 
     if ax:
         y_axis_formatter = FuncFormatter(two_dec_places)

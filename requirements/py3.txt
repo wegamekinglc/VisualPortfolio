@@ -1,4 +1,4 @@
-Finance-Python>=0.3.14
+Finance-Python>=0.3.19
 lxml>=3.4.4
 matplotlib>=1.4.3
 seaborn>=0.6.0
