@@ -143,13 +143,12 @@ def createPerformanceTearSheet(prices=None, returns=None, benchmark=None, benchm
     if benchmarkReturns is not None:
         perf_df['benchmark_return'] = benchmarkReturns
         perf_df['benchmark_cum_return'] = benchmarkReturns.cumsum()
-        perf_df.dropna(inplace=True)
-        perf_df['benchmark_cum_return'] = np.exp(perf_df['benchmark_cum_return']
-                                                     - perf_df['benchmark_cum_return'][0]) - 1.0
-        perf_df['access_return'] = aggregateDaily - benchmarkReturns
-        perf_df['access_cum_return'] = (1.0 + perf_df['daily_cum_return']) \
-                                           / (1.0 + perf_df['benchmark_cum_return']) - 1.0
         perf_df.fillna(0.0, inplace=True)
+        perf_df['benchmark_cum_return'] = np.exp(perf_df['benchmark_cum_return']
+                                                 - perf_df['benchmark_cum_return'][0]) - 1.0
+        perf_df['access_return'] = aggregateDaily - perf_df['benchmark_return']
+        perf_df['access_cum_return'] = (1.0 + perf_df['daily_cum_return']) \
+                                       / (1.0 + perf_df['benchmark_cum_return']) - 1.0
         accessDrawDownDaily = drawDown(perf_df['access_return'])
     else:
         accessDrawDownDaily = None
