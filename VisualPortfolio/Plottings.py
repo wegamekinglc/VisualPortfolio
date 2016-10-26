@@ -5,14 +5,32 @@ Created on 2015-11-9
 @author: cheng.li
 """
 
+import six
+import random
 from functools import wraps
 import seaborn as sns
 import matplotlib
 from matplotlib.ticker import FuncFormatter
+from matplotlib import colors
 import pandas as pd
 import numpy as np
 from VisualPortfolio.Timeseries import aggregateReturns
 from VisualPortfolio.Transactions import getTurnOver
+
+
+def get_color_list():
+
+    return ['#0000CD', '#F08080', '#8B0000', '#EE82EE', '#8B4513', '#008B8B',
+            '#7B68EE', '#FF1493', '#FF6347', '#DC143C', '#E9967A', '#FF4500',
+            '#DA70D6', '#FFA07A', '#8B008B', '#66CDAA', '#3CB371', '#191970',
+            '#4B0082', '#0000FF', '#BC8F8F', '#FF8C00', '#FFB6C1', '#4682B4',
+            '#FF00FF', '#DB7093', '#FF7F50', '#20B2AA', '#2E8B57', '#DAA520',
+            '#FA8072', '#1E90FF', '#BA55D3', '#000000', '#87CEEB', '#5F9EA0',
+            '#00BFFF', '#556B2F', '#CD853F', '#FFFF00', '#6495ED', '#483D8B',
+            '#A52A2A', '#2F4F4F', '#B22222', '#C71585', '#FF0000', '#9932CC',
+            '#00008B', '#00FFFF', '#FFA500', '#FFD700', '#D8BFD8', '#800080',
+            '#00CED1', '#FF00FF', '#4169E1', '#9400D3', '#40E0D0', '#B8860B',
+            '#808000', '#8FBC8F']
 
 
 def plotting_context(func):
@@ -59,7 +77,11 @@ def zero_dec_percentage(x, pos):
     return '%.1f%%' % (x * 100)
 
 
-def plottingRollingReturn(cumReturns, benchmarkReturns, ax, title='Strategy Cumulative Returns'):
+def plottingRollingReturn(cumReturns,
+                          benchmarkReturns,
+                          other_curves,
+                          ax,
+                          title='Strategy Cumulative Returns'):
 
     y_axis_formatter = FuncFormatter(two_dec_places)
     ax.yaxis.set_major_formatter(FuncFormatter(y_axis_formatter))
@@ -70,12 +92,29 @@ def plottingRollingReturn(cumReturns, benchmarkReturns, ax, title='Strategy Cumu
                     label='Strategy',
                     ax=ax)
 
+    color_names = get_color_list()
+
     if benchmarkReturns is not None:
         benchmarkReturns.plot(lw=2,
                               color='gray',
                               alpha=0.6,
                               label=benchmarkReturns.name,
                               ax=ax)
+
+    if other_curves is not None:
+        for i, curve_info in enumerate(zip(*other_curves)):
+            marker = curve_info[0]
+            line_style = curve_info[1]
+            label = curve_info[2]
+            series = curve_info[3]
+            series.plot(lw=2,
+                        marker=marker,
+                        markersize=12,
+                        linestyle=line_style,
+                        color=color_names[i],
+                        alpha=0.6,
+                        label=label,
+                        ax=ax)
 
     ax.axhline(0.0, linestyle='--', color='black', lw=2)
     ax.set_ylabel('Cumulative returns')
@@ -127,7 +166,11 @@ def plottingRollingSharp(rs, ax):
     return ax
 
 
-def plottingDrawdownPeriods(cumReturns, drawDownTable, top, ax, title='Top 5 Drawdown Periods'):
+def plottingDrawdownPeriods(cumReturns,
+                            drawDownTable,
+                            top,
+                            ax,
+                            title='Top 5 Drawdown Periods'):
     y_axis_formatter = FuncFormatter(two_dec_places)
     ax.yaxis.set_major_formatter(FuncFormatter(y_axis_formatter))
     cumReturns.plot(ax=ax)
@@ -213,7 +256,9 @@ def plottingAnnualReturns(returns, ax, title='Annual Returns'):
     return ax
 
 
-def plottingMonthlyRetDist(returns, ax, title="Distribution of Monthly Returns"):
+def plottingMonthlyRetDist(returns,
+                           ax,
+                           title="Distribution of Monthly Returns"):
     x_axis_formatter = FuncFormatter(zero_dec_percentage)
     ax.xaxis.set_major_formatter(FuncFormatter(x_axis_formatter))
     ax.tick_params(axis='x', which='major', labelsize=10)
@@ -252,22 +297,33 @@ def plottingExposure(positions, ax, title="Total non cash exposure (%)"):
         positions_without_cash = positions.drop('cash', axis='columns')
     else:
         positions_without_cash = positions
-    longs = positions_without_cash[positions_without_cash > 0].sum(axis=1).fillna(0) * 100
-    shorts = positions_without_cash[positions_without_cash < 0].abs().sum(axis=1).fillna(0) * 100
+    longs = positions_without_cash[positions_without_cash > 0] \
+        .sum(axis=1).fillna(0) * 100
+    shorts = positions_without_cash[positions_without_cash < 0] \
+        .abs().sum(axis=1).fillna(0) * 100
     df_long_short = pd.DataFrame({'long': longs,
                                   'short': shorts})
-    df_long_short.plot(kind='area', stacked=True, color=['blue', 'green'], linewidth=0., ax=ax)
+    df_long_short.plot(kind='area',
+                       stacked=True,
+                       color=['blue', 'green'],
+                       linewidth=0., ax=ax)
     ax.set_title(title)
     return ax
 
 
-def plottingTopExposure(positions, ax, top=10, title="Top 10 securities exposure (%)"):
+def plottingTopExposure(positions,
+                        ax,
+                        top=10,
+                        title="Top 10 securities exposure (%)"):
     y_axis_formatter = FuncFormatter(two_dec_places)
     ax.yaxis.set_major_formatter(FuncFormatter(y_axis_formatter))
     df_mean = positions.abs().mean()
     df_top = df_mean.nlargest(top)
     (positions[df_top.index] * 100.).plot(ax=ax)
-    ax.legend(loc='upper center', frameon=True, bbox_to_anchor=(0.5, -0.14), ncol=5)
+    ax.legend(loc='upper center',
+              frameon=True,
+              bbox_to_anchor=(0.5, -0.14),
+              ncol=5)
     ax.set_title(title)
     return ax
 
@@ -317,7 +373,11 @@ def plottingTurnover(transactions, positions, ax=None, title="Daily Turnover"):
             lw=2,
             ax=ax)
         ax.axhline(
-            df_turnover.mean(), color='steelblue', linestyle='--', lw=3, alpha=1.0)
+            df_turnover.mean(),
+            color='steelblue',
+            linestyle='--',
+            lw=3,
+            alpha=1.0)
         ax.legend(['Daily turnover',
                    'Average month daily turnover',
                    'Average whole period daily turnover'],

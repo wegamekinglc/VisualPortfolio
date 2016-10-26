@@ -34,12 +34,9 @@ from VisualPortfolio.Plottings import plottingTurnover
 from VisualPortfolio.Timeseries import APPROX_BDAYS_PER_MONTH
 from VisualPortfolio.Timeseries import RollingBeta
 from VisualPortfolio.Timeseries import RollingSharp
-from VisualPortfolio.Env import Settings
-from VisualPortfolio.Env import DataSource
 from PyFin.api import advanceDateByCalendar
 from PyFin.Enums import BizDayConventions
 from PyFin.api import bizDatesList
-from DataAPI import api
 
 
 def get_benchmark_data(benchmark, start_date, end_data):
@@ -72,7 +69,7 @@ def get_benchmark_data(benchmark, start_date, end_data):
 
 
 @plotting_context
-def createPerformanceTearSheet(prices=None, returns=None, benchmark=None, benchmarkReturns=None, plot=True):
+def createPerformanceTearSheet(prices=None, returns=None, benchmark=None, benchmarkReturns=None, other_curves=None, plot=True):
 
     if prices is not None and not isinstance(prices, pd.Series):
         raise TypeError("prices series should be a pandas time series.")
@@ -185,7 +182,7 @@ def createPerformanceTearSheet(prices=None, returns=None, benchmark=None, benchm
         axRollingReturns = plt.subplot(gs[0, :])
         axDrawDown = plt.subplot(gs[1, :])
 
-        plottingRollingReturn(perf_df['daily_cum_return'], benchmarkCumReturns, axRollingReturns)
+        plottingRollingReturn(perf_df['daily_cum_return'], benchmarkCumReturns, other_curves, axRollingReturns)
         plottingDrawdownPeriods(perf_df['daily_cum_return'], drawDownDaily, 5, axDrawDown)
 
         if rollingRisk is not None:
@@ -216,7 +213,7 @@ def createPerformanceTearSheet(prices=None, returns=None, benchmark=None, benchm
          gs = gridspec.GridSpec(verticalSections, 3, wspace=0.5, hspace=0.5)
          axRollingAccessReturns = plt.subplot(gs[0, :])
          axAccessDrawDown = plt.subplot(gs[1, :], sharex=axRollingAccessReturns)
-         plottingRollingReturn(accessCumReturns, None, axRollingAccessReturns, title='Access Cumulative Returns w.r.t. ' + benchmarkReturns.name)
+         plottingRollingReturn(accessCumReturns, None, None, axRollingAccessReturns, title='Access Cumulative Returns w.r.t. ' + benchmarkReturns.name)
          plottingDrawdownPeriods(accessCumReturns, accessDrawDownDaily, 5, axAccessDrawDown, title=('Top 5 Drawdown periods w.r.t. ' + benchmarkReturns.name))
 
          plt.figure(figsize=(16, 7 * verticalSections))
