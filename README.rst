@@ -50,7 +50,7 @@ This tool is used to visualize the perfomance of a portfolio. Much of the codes 
   In [4]: prices = data.get_data_yahoo('600000.ss')['Close']
   In [5]: benchmark = data.get_data_yahoo('000300.ss')['Close']
   ......: benchmark.name = "000300.ss"
-  In [6]: perf_matric, perf_df = createPerformanceTearSheet(prices=prices, benchmark=benchmark)
+  In [6]: perf_matric, perf_df, rollingRisk = createPerformanceTearSheet(prices=prices, benchmark=benchmark)
 
 
 .. image:: img/1.png
