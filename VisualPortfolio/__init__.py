@@ -15,4 +15,4 @@ from VisualPortfolio.Miscellaneous import portfolioAnalysis
 from VisualPortfolio.Env import DataSource
 from VisualPortfolio.Env import Settings
 
-__version__ = '0.2.1'
+__version__ = '0.2.2'
