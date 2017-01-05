@@ -253,9 +253,10 @@ def createPostionTearSheet(position, plot=True):
 
 
 @plotting_context
-def createTranscationTearSheet(transactions, positions, plot=True):
-    positions = aggregatePositons(positions)
-    transcations = aggregateTranscations(transactions)
+def createTranscationTearSheet(transactions, positions, turn_over=None, freq='M', plot=True):
+    if turn_over is None:
+        positions = aggregatePositons(positions)
+        transactions = aggregateTranscations(transactions)
 
     if plot:
         verticalSections = 1
@@ -265,7 +266,7 @@ def createTranscationTearSheet(transactions, positions, plot=True):
     else:
         axTurnOver = None
 
-    turnOverRate = plottingTurnover(transcations, positions, axTurnOver)[1]
+    turnOverRate = plottingTurnover(transactions, positions, turn_over, freq, axTurnOver)[1]
     turnOverRate.name = 'turnover_rate'
     turnOverRate.index.name = 'date'
 
@@ -273,11 +274,11 @@ def createTranscationTearSheet(transactions, positions, plot=True):
 
 
 @plotting_context
-def createAllTearSheet(positions, transcations=None, prices=None, returns=None, benchmark=None, plot=True):
+def createAllTearSheet(positions, transcations=None, prices=None, returns=None, benchmark=None, turn_over=None, freq='M', plot=True):
     perf_metric, perf_df, rollingRisk = createPerformanceTearSheet(prices=prices, returns=returns, benchmark=benchmark, plot=plot)
     createPostionTearSheet(position=positions, plot=plot)
-    if transcations:
-        createTranscationTearSheet(position=positions, transcations=transcations, plot=plot)
+    if transcations is not None or turn_over is not None:
+        createTranscationTearSheet(positions=positions, transactions=transcations, turn_over=turn_over, freq=freq, plot=plot)
     return perf_metric, perf_df, rollingRisk
 
 

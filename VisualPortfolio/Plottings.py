@@ -358,29 +358,38 @@ def plottingHodings(positions, ax, title="Holdings per Day"):
     return ax
 
 
-def plottingTurnover(transactions, positions, ax=None, title="Daily Turnover"):
+def plottingTurnover(transactions, positions, turn_over=None, freq='M', ax=None, title="Daily Turnover"):
 
-    df_turnover = getTurnOver(transactions, positions)
-    df_turnover_by_month = df_turnover.resample('M').sum()
+    if turn_over is None:
+        df_turnover = getTurnOver(transactions, positions)
+    else:
+        df_turnover = turn_over
+
+    df_turnover_agreagted = df_turnover.resample(freq).sum().dropna()
+
+    if freq == 'M':
+        freq = 'Monthly'
+    else:
+        freq = 'Daily'
 
     if ax:
         y_axis_formatter = FuncFormatter(two_dec_places)
         ax.yaxis.set_major_formatter(FuncFormatter(y_axis_formatter))
         df_turnover.plot(color='steelblue', alpha=1.0, lw=0.5, ax=ax)
-        df_turnover_by_month.plot(
+        df_turnover_agreagted.plot(
             color='orangered',
             alpha=0.5,
             lw=2,
             ax=ax)
         ax.axhline(
-            df_turnover.mean(),
+            df_turnover_agreagted.mean(),
             color='steelblue',
             linestyle='--',
             lw=3,
             alpha=1.0)
-        ax.legend(['Daily turnover',
-                   'Average month daily turnover',
-                   'Average whole period daily turnover'],
+        ax.legend(['turnover',
+                   'Aggregated {0} turnover'.format(freq),
+                   'Average {0} turnover'.format(freq)],
                   loc="best")
         ax.set_title(title)
         ax.set_ylabel('Turnover')
