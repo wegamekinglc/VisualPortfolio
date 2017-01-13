@@ -358,7 +358,7 @@ def plottingHodings(positions, ax, title="Holdings per Day"):
     return ax
 
 
-def plottingTurnover(transactions, positions, turn_over=None, freq='M', ax=None, title="Daily Turnover"):
+def plottingTurnover(transactions, positions, turn_over=None, freq='M', ax=None, title="Turnover Analysis"):
 
     if turn_over is None:
         df_turnover = getTurnOver(transactions, positions)
@@ -391,6 +391,6 @@ def plottingTurnover(transactions, positions, turn_over=None, freq='M', ax=None,
                    'Aggregated {0} turnover'.format(freq),
                    'Average {0} turnover'.format(freq)],
                   loc="best")
-        ax.set_title(title)
+        ax.set_title(title + ' (aggregated {0})'.format(freq))
         ax.set_ylabel('Turnover')
     return ax, df_turnover
