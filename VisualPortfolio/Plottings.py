@@ -19,7 +19,6 @@ from VisualPortfolio.Transactions import getTurnOver
 
 
 def get_color_list():
-
     return ['#0000CD', '#F08080', '#8B0000', '#EE82EE', '#8B4513', '#008B8B',
             '#7B68EE', '#FF1493', '#FF6347', '#DC143C', '#E9967A', '#FF4500',
             '#DA70D6', '#FFA07A', '#8B008B', '#66CDAA', '#3CB371', '#191970',
@@ -42,6 +41,7 @@ def plotting_context(func):
                 return func(*args, **kwargs)
         else:
             return func(*args, **kwargs)
+
     return call_w_context
 
 
@@ -78,11 +78,11 @@ def zero_dec_percentage(x, pos):
 
 
 def plottingRollingReturn(cumReturns,
+                          cumReturnsWithoutTC,
                           benchmarkReturns,
                           other_curves,
                           ax,
                           title='Strategy Cumulative Returns'):
-
     y_axis_formatter = FuncFormatter(two_dec_places)
     ax.yaxis.set_major_formatter(FuncFormatter(y_axis_formatter))
 
@@ -91,6 +91,13 @@ def plottingRollingReturn(cumReturns,
                     alpha=0.6,
                     label='Strategy',
                     ax=ax)
+
+    if cumReturnsWithoutTC is not None:
+        cumReturnsWithoutTC.plot(lw=3,
+                                 color='red',
+                                 alpha=0.6,
+                                 label='Strategy (w/o tc)',
+                                 ax=ax)
 
     color_names = get_color_list()
 
@@ -209,7 +216,7 @@ def plottingUnderwater(drawDownSeries, ax, title='Underwater Plot'):
 def plottingMonthlyReturnsHeapmap(returns, ax, title='Monthly Returns (%)'):
     x_axis_formatter = FuncFormatter(integer_format)
     ax.xaxis.set_major_formatter(FuncFormatter(x_axis_formatter))
-    monthlyRetTable = pd.DataFrame(aggregateReturns(returns, 'monthly'))
+    monthlyRetTable = pd.DataFrame(aggregateReturns(returns, convert='monthly')[0])
     monthlyRetTable = monthlyRetTable.unstack()
     monthlyRetTable.columns = monthlyRetTable.columns.droplevel()
     sns.heatmap((np.exp(monthlyRetTable.fillna(0)) - 1.0) * 100.0,
@@ -232,7 +239,7 @@ def plottingAnnualReturns(returns, ax, title='Annual Returns'):
     ax.xaxis.set_major_formatter(FuncFormatter(x_axis_formatter))
     ax.tick_params(axis='x', which='major', labelsize=10)
 
-    annulaReturns = pd.DataFrame(aggregateReturns(returns, 'yearly'))
+    annulaReturns = pd.DataFrame(aggregateReturns(returns, convert='yearly')[0])
     annulaReturns = np.exp(annulaReturns) - 1.
 
     ax.axvline(annulaReturns.values.mean(),
@@ -263,7 +270,7 @@ def plottingMonthlyRetDist(returns,
     ax.xaxis.set_major_formatter(FuncFormatter(x_axis_formatter))
     ax.tick_params(axis='x', which='major', labelsize=10)
 
-    monthlyRetTable = aggregateReturns(returns, 'monthly')
+    monthlyRetTable = aggregateReturns(returns, convert='monthly')[0]
     monthlyRetTable = np.exp(monthlyRetTable) - 1.
 
     if len(monthlyRetTable) > 1:
@@ -298,9 +305,9 @@ def plottingExposure(positions, ax, title="Total non cash exposure (%)"):
     else:
         positions_without_cash = positions
     longs = positions_without_cash[positions_without_cash > 0] \
-        .sum(axis=1).fillna(0) * 100
+                .sum(axis=1).fillna(0) * 100
     shorts = positions_without_cash[positions_without_cash < 0] \
-        .abs().sum(axis=1).fillna(0) * 100
+                 .abs().sum(axis=1).fillna(0) * 100
     df_long_short = pd.DataFrame({'long': longs,
                                   'short': shorts})
     df_long_short.plot(kind='area',
@@ -359,7 +366,6 @@ def plottingHodings(positions, ax, title="Holdings per Day"):
 
 
 def plottingTurnover(transactions, positions, turn_over=None, freq='M', ax=None, title="Turnover Analysis"):
-
     if turn_over is None:
         df_turnover = getTurnOver(transactions, positions)
     else:

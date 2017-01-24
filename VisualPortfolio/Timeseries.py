@@ -56,23 +56,46 @@ def calculatePosWeight(pos):
     ).fillna(0.)
 
 
-def aggregateReturns(returns, convert='daily'):
+def aggregateReturns(returns, turn_over=None, tc_cost=0., convert='daily'):
 
     def cumulateReturns(x):
-       return x.sum()
+        return x.sum()
 
-    if convert == 'daily':
-        return returns.groupby(
-            lambda x: dt.datetime(x.year, x.month, x.day)).apply(cumulateReturns)
-    if convert == 'monthly':
-        return returns.groupby(
-            [lambda x: x.year,
-             lambda x: x.month]).apply(cumulateReturns)
-    if convert == 'yearly':
-        return returns.groupby(
-            [lambda x: x.year]).apply(cumulateReturns)
+    if turn_over is not None:
+        returns_after_tc = (returns - turn_over * tc_cost).dropna()
+
+        if convert == 'daily':
+            return returns.groupby(
+                lambda x: dt.datetime(x.year, x.month, x.day)).apply(cumulateReturns), \
+                   returns_after_tc.groupby(
+                lambda x: dt.datetime(x.year, x.month, x.day)).apply(cumulateReturns)
+        if convert == 'monthly':
+            return returns.groupby(
+                [lambda x: x.year,
+                 lambda x: x.month]).apply(cumulateReturns), \
+                   returns_after_tc.groupby(
+                [lambda x: x.year,
+                 lambda x: x.month]).apply(cumulateReturns)
+        if convert == 'yearly':
+            return returns.groupby(
+                [lambda x: x.year]).apply(cumulateReturns), \
+                   returns_after_tc.groupby(
+                [lambda x: x.year]).apply(cumulateReturns)
+        else:
+            ValueError('convert must be daily, weekly, monthly or yearly')
     else:
-        ValueError('convert must be daily, weekly, monthly or yearly')
+        if convert == 'daily':
+            return returns.groupby(
+                lambda x: dt.datetime(x.year, x.month, x.day)).apply(cumulateReturns), None
+        if convert == 'monthly':
+            return returns.groupby(
+                [lambda x: x.year,
+                 lambda x: x.month]).apply(cumulateReturns), None
+        if convert == 'yearly':
+            return returns.groupby(
+                [lambda x: x.year]).apply(cumulateReturns), None
+        else:
+            ValueError('convert must be daily, weekly, monthly or yearly')
 
 
 def drawDown(returns):

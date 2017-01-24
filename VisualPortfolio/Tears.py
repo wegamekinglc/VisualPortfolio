@@ -8,7 +8,7 @@ Created on 2015-11-9
 import numpy as np
 import pandas as pd
 import matplotlib.gridspec as gridspec
-import matplotlib.pyplot as plt
+from matplotlib import pyplot as plt
 from VisualPortfolio.Timeseries import aggregateReturns
 from VisualPortfolio.Timeseries import drawDown
 from VisualPortfolio.Plottings import plottingRollingReturn
@@ -69,7 +69,14 @@ def get_benchmark_data(benchmark, start_date, end_data):
 
 
 @plotting_context
-def createPerformanceTearSheet(prices=None, returns=None, benchmark=None, benchmarkReturns=None, other_curves=None, plot=True):
+def createPerformanceTearSheet(prices=None,
+                               returns=None,
+                               benchmark=None,
+                               benchmarkReturns=None,
+                               other_curves=None,
+                               turn_over=None,
+                               tc_cost=0.,
+                               plot=True):
 
     if prices is not None and not isinstance(prices, pd.Series):
         raise TypeError("prices series should be a pandas time series.")
@@ -110,7 +117,14 @@ def createPerformanceTearSheet(prices=None, returns=None, benchmark=None, benchm
         benchmarkReturns.dropna(inplace=True)
         benchmarkReturns.index = pd.to_datetime(benchmarkReturns.index.date)
 
-    aggregateDaily = aggregateReturns(returns)
+    aggregateDaily, aggregateDailyAfterTC = aggregateReturns(returns, turn_over, tc_cost)
+
+    if aggregateDailyAfterTC is not None:
+        aggregateDailyBeforeTC = aggregateDaily
+        aggregateDaily = aggregateDailyAfterTC
+    else:
+        aggregateDailyBeforeTC = aggregateDaily
+
     drawDownDaily = drawDown(aggregateDaily)
 
     # perf metric
@@ -134,7 +148,9 @@ def createPerformanceTearSheet(prices=None, returns=None, benchmark=None, benchm
 
     perf_df = pd.DataFrame(index=aggregateDaily.index)
     perf_df['daily_return'] = aggregateDaily
+    perf_df['daily_return (w/o tc)'] = aggregateDailyBeforeTC
     perf_df['daily_cum_return'] = np.exp(aggregateDaily.cumsum()) - 1.0
+    perf_df['daily_cum_return (w/o tc)'] = np.exp(aggregateDailyBeforeTC.cumsum()) - 1.0
     perf_df['daily_draw_down'] = drawDownDaily['draw_down']
 
     if benchmarkReturns is not None:
@@ -182,7 +198,10 @@ def createPerformanceTearSheet(prices=None, returns=None, benchmark=None, benchm
         axRollingReturns = plt.subplot(gs[0, :])
         axDrawDown = plt.subplot(gs[1, :])
 
-        plottingRollingReturn(perf_df['daily_cum_return'], benchmarkCumReturns, other_curves, axRollingReturns)
+        plottingRollingReturn(perf_df['daily_cum_return'],
+                              perf_df['daily_cum_return (w/o tc)'],
+                              benchmarkCumReturns,
+                              other_curves, axRollingReturns)
         plottingDrawdownPeriods(perf_df['daily_cum_return'], drawDownDaily, 5, axDrawDown)
 
         if rollingRisk is not None:
@@ -213,7 +232,7 @@ def createPerformanceTearSheet(prices=None, returns=None, benchmark=None, benchm
          gs = gridspec.GridSpec(verticalSections, 3, wspace=0.5, hspace=0.5)
          axRollingAccessReturns = plt.subplot(gs[0, :])
          axAccessDrawDown = plt.subplot(gs[1, :], sharex=axRollingAccessReturns)
-         plottingRollingReturn(accessCumReturns, None, None, axRollingAccessReturns, title='Access Cumulative Returns w.r.t. ' + benchmarkReturns.name)
+         plottingRollingReturn(accessCumReturns, None, None, None, axRollingAccessReturns, title='Access Cumulative Returns w.r.t. ' + benchmarkReturns.name)
          plottingDrawdownPeriods(accessCumReturns, accessDrawDownDaily, 5, axAccessDrawDown, title=('Top 5 Drawdown periods w.r.t. ' + benchmarkReturns.name))
 
          plt.figure(figsize=(16, 7 * verticalSections))
@@ -274,8 +293,13 @@ def createTranscationTearSheet(transactions, positions, turn_over=None, freq='M'
 
 
 @plotting_context
-def createAllTearSheet(positions, transcations=None, prices=None, returns=None, benchmark=None, turn_over=None, freq='M', plot=True):
-    perf_metric, perf_df, rollingRisk = createPerformanceTearSheet(prices=prices, returns=returns, benchmark=benchmark, plot=plot)
+def createAllTearSheet(positions, transcations=None, prices=None, returns=None, benchmark=None, turn_over=None, tc_cost=0., freq='M',  plot=True):
+    perf_metric, perf_df, rollingRisk = createPerformanceTearSheet(prices=prices,
+                                                                   returns=returns,
+                                                                   benchmark=benchmark,
+                                                                   turn_over=turn_over,
+                                                                   tc_cost=tc_cost,
+                                                                   plot=plot)
     createPostionTearSheet(position=positions, plot=plot)
     if transcations is not None or turn_over is not None:
         createTranscationTearSheet(positions=positions, transactions=transcations, turn_over=turn_over, freq=freq, plot=plot)
@@ -284,7 +308,6 @@ def createAllTearSheet(positions, transcations=None, prices=None, returns=None, 
 
 if __name__ == "__main__":
     from DataAPI import api
-    from matplotlib import pyplot as plt
     from VisualPortfolio import Settings
     from VisualPortfolio import DataSource
 

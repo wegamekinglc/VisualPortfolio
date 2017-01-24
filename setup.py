@@ -29,6 +29,5 @@ setup(
     author_email=AUTHOR_EMAIL,
     url=URL,
     packages=['VisualPortfolio'],
-    py_modules=['VisualPortfolio.__init__'],
     install_requires=io.open(requirements, encoding='utf8').read(),
 )
