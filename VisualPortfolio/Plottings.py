@@ -5,17 +5,16 @@ Created on 2015-11-9
 @author: cheng.li
 """
 
-import six
-import random
 from functools import wraps
 import seaborn as sns
 import matplotlib
 from matplotlib.ticker import FuncFormatter
-from matplotlib import colors
+from statsmodels.tsa.stattools import acf
 import pandas as pd
 import numpy as np
 from VisualPortfolio.Timeseries import aggregateReturns
 from VisualPortfolio.Transactions import getTurnOver
+from VisualPortfolio.Timeseries import aggregatePositons
 
 
 def get_color_list():
@@ -298,6 +297,7 @@ def plottingMonthlyRetDist(returns,
 
 
 def plottingExposure(positions, ax, title="Total non cash exposure (%)"):
+    positions = aggregatePositons(positions, convert='daily')
     y_axis_formatter = FuncFormatter(two_dec_places)
     ax.yaxis.set_major_formatter(FuncFormatter(y_axis_formatter))
     if 'cash' in positions:
@@ -322,6 +322,7 @@ def plottingTopExposure(positions,
                         ax,
                         top=10,
                         title="Top 10 securities exposure (%)"):
+    positions = aggregatePositons(positions, convert='daily')
     y_axis_formatter = FuncFormatter(two_dec_places)
     ax.yaxis.set_major_formatter(FuncFormatter(y_axis_formatter))
     df_mean = positions.abs().mean()
@@ -335,13 +336,20 @@ def plottingTopExposure(positions,
     return ax
 
 
-def plottingHodings(positions, ax, title="Holdings per Day"):
+def plottingHodings(positions, ax, freq='M', title="Holdings Analysis"):
+    positions = aggregatePositons(positions, convert='daily')
     if 'cash' in positions:
         positions = positions.drop('cash', axis='columns')
     df_holdings = positions.apply(lambda x: np.sum(x != 0), axis='columns')
-    df_holdings_by_month = df_holdings.resample('1M').mean()
+    df_holdings_by_freq = df_holdings.resample(freq).mean()
     df_holdings.plot(color='steelblue', alpha=0.6, lw=0.5, ax=ax)
-    df_holdings_by_month.plot(
+
+    if freq == 'M':
+        freq = 'monthly'
+    else:
+        freq = 'daily'
+
+    df_holdings_by_freq.plot(
         color='orangered',
         alpha=0.5,
         lw=2,
@@ -355,13 +363,37 @@ def plottingHodings(positions, ax, title="Holdings per Day"):
 
     ax.set_xlim((positions.index[0], positions.index[-1]))
 
-    ax.legend(['Daily holdings',
-               'average month daily holdings',
-               'average whold peirod daily holdings'],
+    ax.legend(['Holdings on each bar',
+               'Average {0} holdings'.format(freq),
+               'Average whole peirod {0} holdings'.format(freq)],
               loc="best")
     ax.set_title(title)
     ax.set_ylabel('Number of securities holdings')
     ax.set_xlabel('')
+    return ax
+
+
+def plottingPositionACF(positions, ax, title='Position auto correlation function'):
+    positions = aggregatePositons(positions, convert='raw')
+    if 'cash' in positions:
+        positions = positions.drop('cash', axis='columns')
+
+    nlags = 100
+    acf_mat = np.zeros((len(positions.columns), nlags+1))
+    cols = positions.columns
+
+    for i, col in enumerate(cols):
+        acfs = acf(positions[col], nlags=nlags)
+        acf_mat[i, 0:len(acfs)] = acfs
+
+    acf_mean = np.mean(acf_mat, axis=0)
+    ax.plot(acf_mean,
+            color='orangered',
+            alpha=0.5,
+            lw=2,)
+    ax.set_title(title)
+    ax.set_ylabel('Auto correlation')
+    ax.set_xlabel('lags')
     return ax
 
 
@@ -374,9 +406,9 @@ def plottingTurnover(transactions, positions, turn_over=None, freq='M', ax=None,
     df_turnover_agreagted = df_turnover.resample(freq).sum().dropna()
 
     if freq == 'M':
-        freq = 'Monthly'
+        freq = 'monthly'
     else:
-        freq = 'Daily'
+        freq = 'daily'
 
     if ax:
         y_axis_formatter = FuncFormatter(two_dec_places)
@@ -400,3 +432,62 @@ def plottingTurnover(transactions, positions, turn_over=None, freq='M', ax=None,
         ax.set_title(title + ' (aggregated {0})'.format(freq))
         ax.set_ylabel('Turnover')
     return ax, df_turnover
+
+
+if __name__ == "__main__":
+
+    from matplotlib import pyplot as plt
+    from FactorMiner.runner.simplebarrunner import SimpleBarRunner
+    from PyFin.api import *
+
+    alpha_list = ['alpha101_40_4',
+                  'alpha101_225_10',
+                  'alpha101_540_20',
+                  'alpha102_40_4',
+                  'alpha111_40_10',
+                  'alpha111_225_10',
+                  'alpha111_600_20',
+                  'alpha121_40_15',
+                  'alpha121_275_15',
+                  'alpha121_600_20',
+                  'alpha121_900_20',
+                  'alpha122_140_4',
+                  'alpha151_40_15',
+                  'alpha151_275_15',
+                  'alpha151_600_20',
+                  'alpha151_900_20',
+                  'alpha152_140_5']
+    weights_list = [1.,
+                    3.,
+                    6.,
+                    12.,
+                    1.,
+                    3.,
+                    6.,
+                    1., 3., 6., 3.,
+                    12.,
+                    1., 3., 6., 3., 12.]
+
+    weights_list = np.array(weights_list) / np.sum(np.array(weights_list))
+
+    huty_factor = None
+    for i, f_name in enumerate(alpha_list):
+        if huty_factor:
+            huty_factor = huty_factor + weights_list[i] * LAST(f_name)
+        else:
+            huty_factor = weights_list[i] * LAST(f_name)
+
+    runner = SimpleBarRunner(None,
+                             huty_factor,
+                             '2014-01-01',
+                             '2017-02-01',
+                             username='sa',
+                             password='A12345678!',
+                             server_name='test_w',
+                             account='test_mssql_sa',
+                             freq=5)
+
+    turn_over, daily_return, positions, risk_stats, detail_series, factor_values \
+        = runner.simulate(leverage=None, tc_cost=0.)
+
+    plt.show()

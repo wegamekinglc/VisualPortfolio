@@ -23,6 +23,8 @@ def aggregatePositons(positionBooks, convert='daily'):
     if convert == 'daily':
         resampled_pos = positionBooks.groupby(
             lambda x: dt.datetime(x.year, x.month, x.day)).last()
+    elif convert == 'raw':
+        resampled_pos = positionBooks.copy()
 
     return resampled_pos
 
@@ -62,7 +64,7 @@ def aggregateReturns(returns, turn_over=None, tc_cost=0., convert='daily'):
         return x.sum()
 
     if turn_over is not None:
-        returns_after_tc = (returns - turn_over * tc_cost).dropna()
+        returns_after_tc = returns.sub(turn_over * tc_cost, fill_value=0.).dropna()
 
         if convert == 'daily':
             return returns.groupby(

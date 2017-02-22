@@ -30,6 +30,7 @@ from VisualPortfolio.Timeseries import aggregateTranscations
 from VisualPortfolio.Plottings import plottingExposure
 from VisualPortfolio.Plottings import plottingTopExposure
 from VisualPortfolio.Plottings import plottingHodings
+from VisualPortfolio.Plottings import plottingPositionACF
 from VisualPortfolio.Plottings import plottingTurnover
 from VisualPortfolio.Timeseries import APPROX_BDAYS_PER_MONTH
 from VisualPortfolio.Timeseries import RollingBeta
@@ -223,9 +224,9 @@ def createPerformanceTearSheet(prices=None,
         axMonthlyDist = plt.subplot(gs[1, 2])
 
         plottingUnderwater(drawDownDaily['draw_down'], axUnderwater)
-        plottingMonthlyReturnsHeapmap(returns, axMonthlyHeatmap)
-        plottingAnnualReturns(returns, axAnnualReturns)
-        plottingMonthlyRetDist(returns, axMonthlyDist)
+        plottingMonthlyReturnsHeapmap(aggregateDaily, axMonthlyHeatmap)
+        plottingAnnualReturns(aggregateDaily, axAnnualReturns)
+        plottingMonthlyRetDist(aggregateDaily, axMonthlyDist)
 
     if accessReturns is not None and plot:
          plt.figure(figsize=(16, 7 * verticalSections))
@@ -253,21 +254,27 @@ def createPerformanceTearSheet(prices=None,
 
 
 @plotting_context
-def createPostionTearSheet(position, plot=True):
-    positions = aggregatePositons(position)
+def createPostionTearSheet(positions, freq='M', plot=True, convert='raw'):
     positions_weiget = calculatePosWeight(positions)
     if plot:
-        verticalSections = 3
+        verticalSections = 2
         plt.figure(figsize=(16, 7 * verticalSections))
         gs = gridspec.GridSpec(verticalSections, 3, wspace=0.5, hspace=0.5)
 
         axExposure = plt.subplot(gs[0, :])
         axTopExposure = plt.subplot(gs[1, :], sharex=axExposure)
-        axHoldings = plt.subplot(gs[2, :])
+
+        verticalSections = 2
+        plt.figure(figsize=(16, 7 * verticalSections))
+        gs = gridspec.GridSpec(verticalSections, 3, wspace=0.5, hspace=0.5)
+
+        axHoldings = plt.subplot(gs[0, :])
+        axPosACFs = plt.subplot(gs[1, :])
 
         plottingExposure(positions_weiget, axExposure)
         plottingTopExposure(positions_weiget, axTopExposure)
-        plottingHodings(positions_weiget, axHoldings)
+        plottingHodings(positions_weiget, axHoldings, freq=freq)
+        plottingPositionACF(positions_weiget, axPosACFs)
     return positions
 
 
@@ -300,7 +307,7 @@ def createAllTearSheet(positions, transcations=None, prices=None, returns=None, 
                                                                    turn_over=turn_over,
                                                                    tc_cost=tc_cost,
                                                                    plot=plot)
-    createPostionTearSheet(position=positions, plot=plot)
+    createPostionTearSheet(positions=positions, plot=plot, freq=freq, convert='raw')
     if transcations is not None or turn_over is not None:
         createTranscationTearSheet(positions=positions, transactions=transcations, turn_over=turn_over, freq=freq, plot=plot)
     return perf_metric, perf_df, rollingRisk
