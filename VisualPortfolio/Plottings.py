@@ -386,7 +386,7 @@ def plottingPositionACF(positions, ax, title='Position auto correlation function
         acfs = acf(positions[col], nlags=nlags)
         acf_mat[i, 0:len(acfs)] = acfs
 
-    acf_mean = np.mean(acf_mat, axis=0)
+    acf_mean = np.nanmean(acf_mat, axis=0)
     ax.plot(acf_mean,
             color='orangered',
             alpha=0.5,
